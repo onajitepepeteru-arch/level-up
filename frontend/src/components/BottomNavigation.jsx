@@ -39,6 +39,15 @@ const BottomNavigation = ({ currentTab, onTabChange, onLogout, onNavigate }) => 
           );
         })}
         
+        {/* Settings Button */}
+        <button
+          onClick={() => onNavigate('settings')}
+          className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200"
+        >
+          <Settings size={18} />
+          <span className="text-xs font-medium">Settings</span>
+        </button>
+        
         {/* Logout Button */}
         <button
           onClick={onLogout}
