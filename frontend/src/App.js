@@ -2,17 +2,23 @@ import React, { useState } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthScreen from "./components/AuthScreen";
+import OnboardingFlow from "./components/OnboardingFlow";
 import Dashboard from "./components/Dashboard";
 import BodyScanner from "./components/BodyScanner";
 import FaceScanner from "./components/FaceScanner";
 import FoodScanner from "./components/FoodScanner";
 import SocialHub from "./components/SocialHub";
+import Settings from "./components/Settings";
+import Profile from "./components/Profile";
+import AIChat from "./components/AIChat";
 import BottomNavigation from "./components/BottomNavigation";
 import { Toaster } from "./components/ui/toaster";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentScreen, setCurrentScreen] = useState('main');
 
   const handleLogin = () => {
     setIsAuthenticated(true);
