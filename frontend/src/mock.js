@@ -3,9 +3,9 @@ export const mockUser = {
   id: "user123",
   name: "Alex Johnson",
   email: "alex.johnson@example.com",
-  level: 5,
-  xp: 24500,
-  xpToNextLevel: 30000,
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 100,
   avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
 };
 
