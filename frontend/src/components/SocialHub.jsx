@@ -7,15 +7,19 @@ import { MessageCircle, Users, Bell, Search, Plus, Crown, Heart, Share2 } from "
 import { useToast } from "../hooks/use-toast";
 import { mockSocialFeed, mockChats, mockGroups } from "../mock";
 
-const SocialHub = () => {
+const SocialHub = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState("feed");
   const { toast } = useToast();
 
   const handleChat = (chatUser) => {
-    toast({
-      title: "Chat Feature",
-      description: `Opening chat with ${chatUser}...`
-    });
+    if (chatUser === "AI Coach") {
+      onNavigate('ai-chat');
+    } else {
+      toast({
+        title: "Chat Feature",
+        description: `Opening chat with ${chatUser}...`
+      });
+    }
   };
 
   const handleMessage = (user) => {
