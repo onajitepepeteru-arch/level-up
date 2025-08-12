@@ -121,13 +121,21 @@ const Dashboard = ({ onNavigate }) => {
         </h3>
         
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" className="h-16 rounded-xl flex flex-col items-center gap-1 hover:bg-blue-50 transition-colors">
+          <Button 
+            variant="outline" 
+            onClick={() => handleQuickAccess('schedule')}
+            className="h-16 rounded-xl flex flex-col items-center gap-1 hover:bg-blue-50 transition-colors"
+          >
             <Calendar className="w-6 h-6 text-blue-500" />
             <span className="text-sm font-medium">Schedule</span>
           </Button>
-          <Button variant="outline" className="h-16 rounded-xl flex flex-col items-center gap-1 hover:bg-green-50 transition-colors">
-            <Trophy className="w-6 h-6 text-green-500" />
-            <span className="text-sm font-medium">Achievements</span>
+          <Button 
+            variant="outline" 
+            onClick={() => handleQuickAccess('ai-chat')}
+            className="h-16 rounded-xl flex flex-col items-center gap-1 hover:bg-purple-50 transition-colors"
+          >
+            <MessageCircle className="w-6 h-6 text-purple-500" />
+            <span className="text-sm font-medium">AI Coach</span>
           </Button>
         </div>
       </Card>
