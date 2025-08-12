@@ -6,8 +6,20 @@ import { Badge } from "./ui/badge";
 import { Trophy, Zap, Target, Calendar } from "lucide-react";
 import { mockUser, mockProgress, mockMissions } from "../mock";
 
-const Dashboard = () => {
+const Dashboard = ({ onNavigate }) => {
   const xpPercentage = (mockUser.xp / mockUser.xpToNextLevel) * 100;
+  const { toast } = useToast();
+
+  const handleQuickAccess = (action) => {
+    if (action === 'ai-chat') {
+      onNavigate('ai-chat');
+    } else {
+      toast({
+        title: action === 'schedule' ? "Schedule" : "Achievements",
+        description: `${action === 'schedule' ? 'Calendar view' : 'Achievements page'} will be implemented!`
+      });
+    }
+  };
 
   return (
     <div className="p-4 space-y-6 bg-gray-50 min-h-screen">
