@@ -49,20 +49,39 @@ function App() {
     );
   }
 
+  if (!hasCompletedOnboarding) {
+    return (
+      <div className="App">
+        <OnboardingFlow onComplete={handleOnboardingComplete} />
+        <Toaster />
+      </div>
+    );
+  }
+
   const renderCurrentScreen = () => {
-    switch(currentTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'body-scanner':
-        return <BodyScanner />;
-      case 'face-scanner':
-        return <FaceScanner />;
-      case 'food-scanner':
-        return <FoodScanner />;
-      case 'social-hub':
-        return <SocialHub />;
+    switch(currentScreen) {
+      case 'settings':
+        return <Settings onLogout={handleLogout} onNavigate={handleNavigate} />;
+      case 'profile':
+        return <Profile onBack={() => setCurrentScreen('main')} />;
+      case 'ai-chat':
+        return <AIChat onBack={() => setCurrentScreen('main')} />;
+      case 'main':
       default:
-        return <Dashboard />;
+        switch(currentTab) {
+          case 'dashboard':
+            return <Dashboard onNavigate={handleNavigate} />;
+          case 'body-scanner':
+            return <BodyScanner />;
+          case 'face-scanner':
+            return <FaceScanner />;
+          case 'food-scanner':
+            return <FoodScanner />;
+          case 'social-hub':
+            return <SocialHub onNavigate={handleNavigate} />;
+          default:
+            return <Dashboard onNavigate={handleNavigate} />;
+        }
     }
   };
 
