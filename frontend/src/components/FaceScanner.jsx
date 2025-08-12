@@ -5,7 +5,7 @@ import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { Camera, Upload, Sparkles, History, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
-import { mockSkinAnalysis } from "../mock";
+import { mockSkinAnalysis, mockScanHistory } from "../mock";
 
 const FaceScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
