@@ -113,11 +113,14 @@ function App() {
           </div>
 
           {/* Bottom Navigation */}
-          <BottomNavigation 
-            currentTab={currentTab} 
-            onTabChange={setCurrentTab}
-            onLogout={handleLogout}
-          />
+          {currentScreen === 'main' && (
+            <BottomNavigation 
+              currentTab={currentTab} 
+              onTabChange={setCurrentTab}
+              onLogout={handleLogout}
+              onNavigate={handleNavigate}
+            />
+          )}
         </div>
         <Toaster />
       </BrowserRouter>
