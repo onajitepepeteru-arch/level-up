@@ -25,8 +25,26 @@ const Dashboard = ({ onNavigate }) => {
   return (
     <div className="p-4 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="text-center py-4">
+      <div className="flex items-center justify-between py-4 px-2">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onNavigate('ai-chat')}
+            className="rounded-lg"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onNavigate('settings')}
+            className="rounded-lg"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Level Progress Card */}
