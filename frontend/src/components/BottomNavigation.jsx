@@ -28,7 +28,13 @@ const BottomNavigation = ({ currentTab, onTabChange, onLogout }) => {
               }`}
             >
               <Icon size={18} className={isActive ? 'scale-110' : ''} />
-              <span className="text-xs font-medium truncate">{tab.label.split(' ')[0]}</span>
+              <span className="text-xs font-medium truncate">{
+                tab.id === 'body-scanner' ? 'Body' :
+                tab.id === 'face-scanner' ? 'Face' :
+                tab.id === 'food-scanner' ? 'Food' :
+                tab.id === 'social-hub' ? 'Social' :
+                tab.label.split(' ')[0]
+              }</span>
             </button>
           );
         })}
