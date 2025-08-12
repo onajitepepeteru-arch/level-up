@@ -1,7 +1,7 @@
 import React from "react";
-import { Home, Scan, User, Users, Camera, LogOut } from "lucide-react";
+import { Home, Scan, User, Users, Camera, LogOut, Settings } from "lucide-react";
 
-const BottomNavigation = ({ currentTab, onTabChange, onLogout }) => {
+const BottomNavigation = ({ currentTab, onTabChange, onLogout, onNavigate }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'body-scanner', label: 'Body Scanner', icon: Scan },
