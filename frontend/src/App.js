@@ -24,9 +24,20 @@ function App() {
     setIsAuthenticated(true);
   };
 
+  const handleOnboardingComplete = (userData) => {
+    console.log("Onboarding completed with data:", userData);
+    setHasCompletedOnboarding(true);
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setHasCompletedOnboarding(false);
     setCurrentTab('dashboard');
+    setCurrentScreen('main');
+  };
+
+  const handleNavigate = (screen) => {
+    setCurrentScreen(screen);
   };
 
   if (!isAuthenticated) {
