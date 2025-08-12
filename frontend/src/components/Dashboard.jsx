@@ -3,8 +3,9 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
-import { Trophy, Zap, Target, Calendar } from "lucide-react";
+import { Trophy, Zap, Target, Calendar, Settings, MessageCircle } from "lucide-react";
 import { mockUser, mockProgress, mockMissions } from "../mock";
+import { useToast } from "../hooks/use-toast";
 
 const Dashboard = ({ onNavigate }) => {
   const xpPercentage = (mockUser.xp / mockUser.xpToNextLevel) * 100;
