@@ -10,8 +10,8 @@ export const mockUser = {
 };
 
 export const mockProgress = {
-  daily: 60,
-  weekly: 87
+  daily: 0,
+  weekly: 0
 };
 
 export const mockMissions = [
