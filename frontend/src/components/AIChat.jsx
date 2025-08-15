@@ -90,8 +90,34 @@ const AIChat = ({ onBack }) => {
     setInputMessage("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: mockUser.id,
+          session_id: `session_${Date.now()}`,
+          message: inputMessage
+        })
+      });
+
+      const data = await response.json();
+      
+      const aiResponse = {
+        id: Date.now() + 1,
+        text: data.response,
+        sender: "ai",
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      // Fallback to mock response
       const aiResponse = {
         id: Date.now() + 1,
         text: generateAIResponse(inputMessage),
@@ -101,7 +127,7 @@ const AIChat = ({ onBack }) => {
       
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const quickActions = [
