@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   Zap
 } from "lucide-react";
-import { mockUser } from "../mock";
+import { mockUser, mockProgress } from "../mock";
 import { useToast } from "../hooks/use-toast";
 
 const AIChat = ({ onBack }) => {
