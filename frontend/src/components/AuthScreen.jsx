@@ -11,6 +11,18 @@ const AuthScreen = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [step, setStep] = useState(1); // For signup flow
+  const [signupData, setSignupData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    gender: "",
+    goals: [],
+    bodyType: "",
+    activityLevel: ""
+  });
   const { toast } = useToast();
 
   const handleSubmit = (e) => {
