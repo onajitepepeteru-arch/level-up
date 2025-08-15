@@ -18,7 +18,7 @@ export const mockMissions = [
   {
     id: "m1",
     type: "Food Scan",
-    description: "Complete your daily scan for +5 XP",
+    description: "Complete your first scan for +5 XP",
     xp: 5,
     completed: false,
     icon: "🍎"
@@ -28,7 +28,7 @@ export const mockMissions = [
     type: "Body Scan",
     description: "Track your posture & stats for +8 XP",
     xp: 8,
-    completed: true,
+    completed: false,
     icon: "💪"
   },
   {
@@ -41,11 +41,11 @@ export const mockMissions = [
   },
   {
     id: "m4",
-    type: "Sleep Goal",
-    description: "8:00-10:00h sleep for +15 XP",
-    xp: 15,
-    completed: true,
-    icon: "😴"
+    type: "Complete Profile",
+    description: "Finish your setup for +10 XP",
+    xp: 10,
+    completed: false,
+    icon: "👤"
   }
 ];
 
