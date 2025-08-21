@@ -311,6 +311,42 @@ frontend:
     stuck_count: 0
     priority: "high"
     needs_retesting: false
+  - task: "Media Preview (Feed & Scanners)"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/SocialHub.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "user"
+        - comment: "Preview shows runtime error and app compiles with problems; cannot see preview at all."
+        - working: false
+        - agent: "main"
+        - comment: "Refactored preview to use URL.createObjectURL with cleanup across SocialHub and all Scanners; requesting automated frontend tests."
+  - task: "Share Modal & Share-to-Room"
+    implemented: true
+    working: NA
+    file: "/app/frontend/src/components/SocialHub.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Added Share modal with copy link and share to room; requests UI validation."
+  - task: "Chat Advanced Settings & Invite"
+    implemented: true
+    working: NA
+    file: "/app/frontend/src/components/ChatRoom.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Added Settings modal (edit name/description/type/maxMembers) and Invite modal with user search + invite API; requests UI validation."
     status_history:
         - working: "NA"
         - agent: "testing"
