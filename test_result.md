@@ -453,9 +453,6 @@ metadata:
 test_plan:
   current_focus:
     - "AI Chat Integration"
-    - "User Data Retrieval APIs"
-    - "Auth Login Serialization"
-    - "Notifications API"
   stuck_tasks:
     - "AI Chat Integration"
   test_all: false
