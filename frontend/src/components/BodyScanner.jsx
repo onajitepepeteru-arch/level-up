@@ -116,9 +116,9 @@ const BodyScanner = ({ onNavigate }) => {
 
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-3">Weekly Consistency</h3>
-        <div>
+        <div className="space-y-2">
           <Progress value={scanResult ? 72 : 0} className="h-2" />
-          <div className="text-xs text-gray-600 mt-1">{scanResult ? '72%' : '0%'} this week</div>
+          <div className="text-xs text-gray-600">2 days streak • 4 scans this week</div>
         </div>
       </Card>
 
