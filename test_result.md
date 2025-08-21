@@ -348,6 +348,9 @@ frontend:
         - working: true
         - agent: "testing"
         - comment: "✅ Social Hub working perfectly. All three tabs functional (Feed, Chats, Groups). Feed shows user posts with levels and achievements, Chats tab working, Groups tab showing fitness and skincare communities. Social interactions (Like, Comment, Share) present."
+        - working: true
+        - agent: "main"
+        - comment: "Fixed prior duplicate handler issue by ensuring single handleJoinRoom definition; integrated ChatRoom/CreateChatRoom navigation; added notifications bell with unread count and navigation to Notifications screen; improved optimistic UI for joining rooms and liking posts."
 
   - task: "Settings & Profile"
     implemented: true
