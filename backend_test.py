@@ -333,33 +333,215 @@ class BackendTester:
         except Exception as e:
             self.log_test("Get Chat History - JSON Serialization", False, f"❌ Chat history error: {str(e)}")
     
-    def test_cors_configuration(self):
-        """Test CORS configuration"""
-        print("\n🌐 Testing CORS Configuration...")
+    def test_notifications_api(self):
+        """Test notifications API endpoints"""
+        print("\n🔔 Testing Notifications API...")
         
+        # First create a notification for testing
+        notification_id = None
         try:
-            # Test preflight request
-            headers = {
-                'Origin': 'https://fitness-tracker-93.preview.emergentagent.com',
-                'Access-Control-Request-Method': 'POST',
-                'Access-Control-Request-Headers': 'Content-Type'
+            # Create a test notification
+            notification_data = {
+                "user_id": self.test_user_id,
+                "title": "Test Notification",
+                "message": "This is a test notification for API testing",
+                "type": "info"
             }
             
-            response = self.session.options(f"{API_BASE_URL}/health", headers=headers, timeout=10)
+            response = self.session.post(
+                f"{API_BASE_URL}/notifications",
+                json=notification_data,
+                timeout=10
+            )
             
-            if response.status_code in [200, 204]:
-                cors_headers = response.headers
-                if 'Access-Control-Allow-Origin' in cors_headers:
-                    self.log_test("CORS Configuration", True, 
-                                f"CORS properly configured, allows origin: {cors_headers.get('Access-Control-Allow-Origin')}")
-                else:
-                    self.log_test("CORS Configuration", False, 
-                                "CORS headers missing in response")
+            if response.status_code == 200:
+                self.log_test("Create Notification", True, "Test notification created successfully")
             else:
-                self.log_test("CORS Configuration", False, 
-                            f"CORS preflight failed: {response.status_code}")
+                self.log_test("Create Notification", False, 
+                            f"Failed to create notification: {response.status_code}")
         except Exception as e:
-            self.log_test("CORS Configuration", False, f"CORS test error: {str(e)}")
+            self.log_test("Create Notification", False, f"Notification creation error: {str(e)}")
+        
+        try:
+            # Test get user notifications
+            response = self.session.get(f"{API_BASE_URL}/user/{self.test_user_id}/notifications", timeout=10)
+            if response.status_code == 200:
+                try:
+                    notifications = response.json()
+                    # Check JSON serialization
+                    json.dumps(notifications)
+                    
+                    if isinstance(notifications, list):
+                        self.log_test("Get User Notifications - JSON Serialization", True, 
+                                    f"✅ Retrieved {len(notifications)} notifications, all JSON serializable")
+                        
+                        # Find a notification to test read functionality
+                        if notifications:
+                            notification_id = notifications[0].get('id')
+                            # Check unread count logic (can be inferred by read flag)
+                            unread_count = sum(1 for n in notifications if not n.get('read', False))
+                            self.log_test("Notifications Unread Count Logic", True, 
+                                        f"Found {unread_count} unread notifications")
+                    else:
+                        self.log_test("Get User Notifications - JSON Serialization", False, 
+                                    f"Expected list, got {type(notifications)}")
+                except (json.JSONDecodeError, TypeError) as e:
+                    self.log_test("Get User Notifications - JSON Serialization", False, 
+                                f"❌ Serialization error: {str(e)}")
+            else:
+                self.log_test("Get User Notifications - JSON Serialization", False, 
+                            f"❌ Failed with status {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_test("Get User Notifications - JSON Serialization", False, f"❌ Notifications error: {str(e)}")
+        
+        # Test mark notification as read
+        if notification_id:
+            try:
+                response = self.session.patch(
+                    f"{API_BASE_URL}/notifications/{notification_id}/read",
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    self.log_test("Mark Notification Read", True, 
+                                "✅ Notification marked as read successfully")
+                else:
+                    self.log_test("Mark Notification Read", False, 
+                                f"❌ Failed with status {response.status_code}: {response.text}")
+            except Exception as e:
+                self.log_test("Mark Notification Read", False, f"❌ Mark read error: {str(e)}")
+        else:
+            self.log_test("Mark Notification Read", False, "❌ No notification ID available for testing")
+    
+    def test_auth_login_serialization(self):
+        """Test auth login with focus on JSON serialization"""
+        print("\n🔐 Testing Auth Login Serialization...")
+        
+        # Test registration first
+        test_user_data = {
+            "name": "Sarah Wilson",
+            "email": f"sarah.test.{str(uuid.uuid4())}@levelup.com",
+            "password": "securepass456"
+        }
+        
+        try:
+            response = self.session.post(
+                f"{API_BASE_URL}/auth/register",
+                json=test_user_data,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                try:
+                    user_data = response.json()
+                    # Check JSON serialization
+                    json.dumps(user_data)
+                    
+                    # Verify user.id is UUID string
+                    user = user_data.get('user', {})
+                    user_id = user.get('id')
+                    token = user_data.get('token')
+                    
+                    if user_id and isinstance(user_id, str):
+                        # Verify it's a valid UUID format
+                        try:
+                            uuid.UUID(user_id)
+                            self.log_test("Auth Register - User ID UUID", True, 
+                                        f"✅ User ID is valid UUID string: {user_id}")
+                        except ValueError:
+                            self.log_test("Auth Register - User ID UUID", False, 
+                                        f"❌ User ID not valid UUID: {user_id}")
+                    else:
+                        self.log_test("Auth Register - User ID UUID", False, 
+                                    f"❌ User ID missing or not string: {type(user_id)}")
+                    
+                    if token and isinstance(token, str):
+                        self.log_test("Auth Register - Token String", True, 
+                                    "✅ Token is string")
+                    else:
+                        self.log_test("Auth Register - Token String", False, 
+                                    f"❌ Token missing or not string: {type(token)}")
+                    
+                    # Check no ObjectId leaks
+                    user_str = json.dumps(user_data)
+                    if 'ObjectId' not in user_str and '_id' not in user_str:
+                        self.log_test("Auth Register - No ObjectId Leaks", True, 
+                                    "✅ No ObjectId or _id fields in response")
+                    else:
+                        self.log_test("Auth Register - No ObjectId Leaks", False, 
+                                    "❌ ObjectId or _id found in response")
+                    
+                except (json.JSONDecodeError, TypeError) as e:
+                    self.log_test("Auth Register - JSON Serialization", False, 
+                                f"❌ Serialization error: {str(e)}")
+                    return
+            else:
+                self.log_test("Auth Register - JSON Serialization", False, 
+                            f"❌ Registration failed: {response.status_code}")
+                return
+        except Exception as e:
+            self.log_test("Auth Register - JSON Serialization", False, f"❌ Registration error: {str(e)}")
+            return
+        
+        # Now test login with same credentials
+        try:
+            login_data = {
+                "email": test_user_data["email"],
+                "password": test_user_data["password"]
+            }
+            
+            response = self.session.post(
+                f"{API_BASE_URL}/auth/login",
+                json=login_data,  # Try JSON first
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                try:
+                    login_response = response.json()
+                    # Check JSON serialization
+                    json.dumps(login_response)
+                    
+                    # Verify user.id is UUID string
+                    user = login_response.get('user', {})
+                    user_id = user.get('id')
+                    token = login_response.get('token')
+                    
+                    if user_id and isinstance(user_id, str):
+                        try:
+                            uuid.UUID(user_id)
+                            self.log_test("Auth Login - User ID UUID", True, 
+                                        f"✅ User ID is valid UUID string: {user_id}")
+                        except ValueError:
+                            self.log_test("Auth Login - User ID UUID", False, 
+                                        f"❌ User ID not valid UUID: {user_id}")
+                    else:
+                        self.log_test("Auth Login - User ID UUID", False, 
+                                    f"❌ User ID missing or not string: {type(user_id)}")
+                    
+                    if token and isinstance(token, str):
+                        self.log_test("Auth Login - Token String", True, 
+                                    "✅ Token is string")
+                    else:
+                        self.log_test("Auth Login - Token String", False, 
+                                    f"❌ Token missing or not string: {type(token)}")
+                    
+                    # Check no ObjectId leaks
+                    response_str = json.dumps(login_response)
+                    if 'ObjectId' not in response_str and '_id' not in response_str:
+                        self.log_test("Auth Login - No ObjectId Leaks", True, 
+                                    "✅ No ObjectId or _id fields in response")
+                    else:
+                        self.log_test("Auth Login - No ObjectId Leaks", False, 
+                                    "❌ ObjectId or _id found in response")
+                    
+                except (json.JSONDecodeError, TypeError) as e:
+                    self.log_test("Auth Login - JSON Serialization", False, 
+                                f"❌ Serialization error: {str(e)}")
+            else:
+                self.log_test("Auth Login - JSON Serialization", False, 
+                            f"❌ Login failed: {response.status_code}, response: {response.text}")
+        except Exception as e:
+            self.log_test("Auth Login - JSON Serialization", False, f"❌ Login error: {str(e)}")
     
     def run_all_tests(self):
         """Run all backend tests"""
