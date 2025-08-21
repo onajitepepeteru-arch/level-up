@@ -99,7 +99,7 @@ const FaceScanner = () => {
   };
 
   return (
-    <div className="p-4 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-4 space-y-6 bg-gray-50 min-h-screen pb-20">
       {/* Header */}
       <div className="text-center py-4">
         <h1 className="text-2xl font-bold text-gray-900">Face Scanner</h1>
@@ -109,26 +109,175 @@ const FaceScanner = () => {
         </p>
       </div>
 
-      {/* Scan Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          onClick={handleFaceSelfie}
-          disabled={isScanning}
-          className="h-20 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white flex flex-col items-center gap-2 transition-all duration-200 transform hover:scale-[1.02]"
-        >
-          <Camera className="w-6 h-6" />
-          <span className="font-medium">{isScanning ? 'Analyzing...' : 'Face Selfie'}</span>
-        </Button>
+      {!scanResult ? (
+        <>
+          {/* Image Selection/Preview */}
+          {imagePreview ? (
+            <Card className="p-6">
+              <div className="relative">
+                <img 
+                  src={imagePreview} 
+                  alt="Selected selfie" 
+                  className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
+                />
+                <Button
+                  onClick={resetScan}
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                >
+                  <RotateCcw size={16} />
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600 text-center mt-4">
+                Selfie selected. Ready to analyze your skin!
+              </p>
+            </Card>
+          ) : (
+            <Card className="p-6">
+              <div 
+                onClick={handleUploadPhoto}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+              >
+                <Upload size={48} className="mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600 mb-2">Click to select a selfie</p>
+                <p className="text-sm text-gray-500">Supports JPG, PNG up to 5MB</p>
+              </div>
+            </Card>
+          )}
 
-        <Button
-          onClick={handleUploadPhoto}
-          variant="outline"
-          className="h-20 rounded-xl border-2 border-pink-200 hover:border-pink-300 bg-white hover:bg-pink-50 flex flex-col items-center gap-2 transition-all duration-200"
-        >
-          <Upload className="w-6 h-6 text-pink-600" />
-          <span className="font-medium text-pink-600">Upload Photo</span>
-        </Button>
-      </div>
+          {/* Scan Actions */}
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              onClick={handleFaceSelfie}
+              disabled={isScanning}
+              className="h-20 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white flex flex-col items-center gap-2 transition-all duration-200 transform hover:scale-[1.02]"
+            >
+              <Camera className="w-6 h-6" />
+              <span className="font-medium">Take Selfie</span>
+            </Button>
+
+            <Button
+              onClick={handleUploadPhoto}
+              variant="outline"
+              className="h-20 rounded-xl border-2 border-pink-200 hover:border-pink-300 bg-white hover:bg-pink-50 flex flex-col items-center gap-2 transition-all duration-200"
+            >
+              <Upload className="w-6 h-6 text-pink-600" />
+              <span className="font-medium text-pink-600">Upload Photo</span>
+            </Button>
+          </div>
+
+          {/* Scan Button */}
+          <Button 
+            onClick={handleScan}
+            disabled={!selectedImage || isScanning}
+            className="w-full h-16 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-lg font-semibold"
+          >
+            {isScanning ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Analyzing Skin...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Sparkles size={24} />
+                <span>Analyze Face</span>
+              </div>
+            )}
+          </Button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            capture="user"
+          />
+        </>
+      ) : (
+        <>
+          {/* Scan Results */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Skin Analysis Results</h3>
+              <Badge className="bg-pink-500">
+                <Sparkles size={14} className="mr-1" />
+                +{scanResult.xp_earned} XP
+              </Badge>
+            </div>
+
+            <div className="space-y-6">
+              <div className="text-center py-4">
+                <div className="text-6xl mb-4">✨</div>
+                <p className="text-gray-600">{scanResult.message}</p>
+              </div>
+
+              {/* Current Skin Analysis */}
+              <div>
+                <h4 className="font-semibold mb-3">Current Skin Analysis</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg">
+                    <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-pink-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">Skin Type: {scanResult.analysis.skinType}</p>
+                      <p className="text-sm text-gray-600">{scanResult.analysis.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <AlertTriangle className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">Areas for Improvement</p>
+                      <p className="text-sm text-gray-600">{scanResult.analysis.concerns}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Routine Suggestion */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900">AI Routine Suggestion</h4>
+                </div>
+                
+                <p className="text-gray-700 mb-3">{scanResult.analysis.aiSuggestion}</p>
+                
+                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">Recommended Product</p>
+                    <p className="text-sm text-gray-600">{scanResult.analysis.recommendedProduct}</p>
+                  </div>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                    View
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <Button 
+              onClick={resetScan}
+              variant="outline" 
+              className="w-full h-12"
+            >
+              Scan Again
+            </Button>
+          </div>
+        </>
+      )}
 
       {/* Scanning Progress */}
       {isScanning && (
@@ -144,61 +293,6 @@ const FaceScanner = () => {
           <p className="text-center text-sm text-gray-500 mt-2">{scanProgress}% Complete</p>
         </Card>
       )}
-
-      {/* Current Skin Analysis */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-pink-500" />
-          Current Skin Analysis
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-pink-50 rounded-lg">
-            <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-pink-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">Skin Type: Combination</p>
-              <p className="text-sm text-gray-600">Oily T-zone, dry cheek area</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-            <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">Skin Type: Combination</p>
-              <p className="text-sm text-gray-600">{mockSkinAnalysis.concerns}</p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* AI Routine Suggestion */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">AI Routine Suggestion</h3>
-        </div>
-        
-        <p className="text-gray-700 mb-4">{mockSkinAnalysis.aiSuggestion}</p>
-        
-        <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-gray-900">Recommended Product</p>
-            <p className="text-sm text-gray-600">{mockSkinAnalysis.recommendedProduct}</p>
-          </div>
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
-            View
-          </Button>
-        </div>
-      </Card>
 
       {/* Glow Progress */}
       <Card className="p-6">
