@@ -163,16 +163,22 @@ Recent Activity:
 Provide personalized, actionable advice. Be encouraging and motivational. 
 Reference their level, goals, and scan history when relevant. Keep responses under 200 words."""
 
-        # Initialize AI chat
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=chat_request.session_id,
-            system_message=system_message
-        ).with_model("openai", "gpt-4o-mini")
-        
-        # Send message to AI
-        user_message = UserMessage(text=chat_request.message)
-        ai_response = await chat.send_message(user_message)
+        # Initialize AI chat with error handling
+        try:
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=chat_request.session_id,
+                system_message=system_message
+            ).with_model("openai", "gpt-4o-mini")
+            
+            # Send message to AI
+            user_message = UserMessage(text=chat_request.message)
+            ai_response = await chat.send_message(user_message)
+            
+        except Exception as ai_error:
+            logging.error(f"AI integration error: {str(ai_error)}")
+            # Fallback response when AI is unavailable
+            ai_response = f"Hi! I'm your LevelUP fitness coach. I'm currently experiencing some technical issues, but I'll be back soon! In the meantime, here's some general advice: {chat_request.message}"
         
         # Save chat to database
         chat_message = ChatMessage(
