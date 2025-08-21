@@ -434,3 +434,11 @@ async def get_user_scans(user_id: str, scan_type: Optional[str] = None):
     return [serialize_doc(s) for s in scans]
 
 app.include_router(api_router)
+
+@api_router.get("/")
+async def root():
+    return {"message": "LevelUP API is running"}
+
+@api_router.get("/health")
+async def health():
+    return {"status": "healthy"}
