@@ -90,9 +90,12 @@ class OnboardingData(BaseModel):
     age: int
     gender: str
     goals: List[str]
-    bodyType: str
-    activityLevel: str
-    healthConditions: List[str] = []
+    body_type: str = Field(alias='bodyType')
+    activity_level: str = Field(alias='activityLevel')
+    health_conditions: List[str] = []
+
+    class Config:
+        populate_by_name = True
 
 class ScanResult(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
