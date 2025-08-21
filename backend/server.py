@@ -864,7 +864,8 @@ async def get_notifications(user_id: str):
     ).sort("timestamp", -1).to_list(50)
     
     for notification in notifications:
-        notification['_id'] = str(notification['_id'])
+        if '_id' in notification:
+            notification['_id'] = str(notification['_id'])
     
     return notifications
 
@@ -885,6 +886,204 @@ async def mark_notification_read(notification_id: str):
         raise HTTPException(status_code=404, detail="Notification not found")
     
     return {"message": "Notification marked as read"}
+
+# Social features: posts, comments, likes, shares, chat rooms, leaderboard
+class SocialPost(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    content: str
+    type: str = "general"
+    likes: int = 0
+    likes_by: List[str] = []
+    comments: List[dict] = []
+    share_count: int = 0
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class SocialComment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class CreatePostRequest(BaseModel):
+    user_id: str
+    content: str
+    type: str = "general"
+
+class LikePostRequest(BaseModel):
+    user_id: str
+    post_id: str
+
+class CommentPostRequest(BaseModel):
+    user_id: str
+    post_id: str
+    content: str
+
+class SharePostRequest(BaseModel):
+    user_id: str
+    post_id: str
+
+class ChatRoomModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str = ""
+    category: str = "general"
+    type: str = "public"
+    members: List[str] = []
+    lastMessage: str = ""
+    lastActivity: datetime = Field(default_factory=datetime.utcnow)
+
+@api_router.get("/social/feed")
+async def get_social_feed(user_id: Optional[str] = None):
+    posts = await db.posts.find({}).sort("timestamp", -1).to_list(100)
+    result = []
+    for p in posts:
+        if '_id' in p:
+            p['_id'] = str(p['_id'])
+        # build user object
+        u = await db.users.find_one({"id": p.get("user_id")})
+        user_obj = {
+            "name": u.get("name", "User") if u else "User",
+            "avatar": u.get("avatar_url") if u else None,
+            "level": u.get("level", 1) if u else 1
+        }
+        result.append({
+            "id": p.get("id"),
+            "user": user_obj,
+            "content": p.get("content", ""),
+            "timestamp": p.get("timestamp"),
+            "likes": p.get("likes", 0),
+            "comments": len(p.get("comments", [])),
+            "isLiked": user_id in p.get("likes_by", []) if user_id else False,
+            "type": p.get("type", "general"),
+            "xp_earned": p.get("xp_earned")
+        })
+    return {"posts": result}
+
+@api_router.post("/social/post")
+async def create_post(req: CreatePostRequest):
+    user = await db.users.find_one({"id": req.user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    post = SocialPost(user_id=req.user_id, content=req.content, type=req.type)
+    await db.posts.insert_one(post.dict())
+    # response object compatible with frontend
+    return {
+        "id": post.id,
+        "user": {
+            "name": user.get("name", "User"),
+            "avatar": user.get("avatar_url"),
+            "level": user.get("level", 1)
+        },
+        "content": post.content,
+        "timestamp": post.timestamp,
+        "likes": 0,
+        "comments": 0,
+        "isLiked": False,
+        "type": post.type
+    }
+
+@api_router.post("/social/like")
+async def like_post(req: LikePostRequest):
+    post = await db.posts.find_one({"id": req.post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    likes_by = post.get("likes_by", [])
+    liked = req.user_id in likes_by
+    if liked:
+        likes_by.remove(req.user_id)
+        new_likes = max(0, post.get("likes", 0) - 1)
+    else:
+        likes_by.append(req.user_id)
+        new_likes = post.get("likes", 0) + 1
+    await db.posts.update_one({"id": req.post_id}, {"$set": {"likes_by": likes_by, "likes": new_likes}})
+    return {"liked": not liked, "likes": new_likes}
+
+@api_router.post("/social/comment")
+async def comment_post(req: CommentPostRequest):
+    user = await db.users.find_one({"id": req.user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    post = await db.posts.find_one({"id": req.post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    c = SocialComment(user_id=req.user_id, content=req.content)
+    comments = post.get("comments", [])
+    comments.append(c.dict())
+    await db.posts.update_one({"id": req.post_id}, {"$set": {"comments": comments}})
+    return {"comment": {"id": c.id, "user": {"name": user.get("name", "User")}, "content": c.content, "timestamp": c.timestamp}}
+
+@api_router.post("/social/share")
+async def share_post(req: SharePostRequest):
+    post = await db.posts.find_one({"id": req.post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    new_count = post.get("share_count", 0) + 1
+    await db.posts.update_one({"id": req.post_id}, {"$set": {"share_count": new_count}})
+    return {"share_count": new_count}
+
+async def seed_chat_rooms():
+    count = await db.chat_rooms.count_documents({})
+    if count == 0:
+        rooms = [
+            ChatRoomModel(name="Fitness Beginners", description="Support group for fitness newcomers", category="fitness").dict(),
+            ChatRoomModel(name="Nutrition Masters", description="Share recipes and nutrition tips", category="nutrition").dict(),
+            ChatRoomModel(name="Body Transformation", description="Track your body scan progress together", category="fitness").dict(),
+            ChatRoomModel(name="Skincare Squad", description="Glowing skin tips and face scan discussions", category="skincare").dict(),
+        ]
+        await db.chat_rooms.insert_many(rooms)
+
+@api_router.get("/social/chat-rooms")
+async def get_chat_rooms(user_id: Optional[str] = None):
+    await seed_chat_rooms()
+    rooms = await db.chat_rooms.find({}).sort("lastActivity", -1).to_list(50)
+    result = []
+    for r in rooms:
+        if '_id' in r:
+            r['_id'] = str(r['_id'])
+        result.append({
+            "id": r.get("id"),
+            "name": r.get("name"),
+            "description": r.get("description", ""),
+            "category": r.get("category", "general"),
+            "type": r.get("type", "public"),
+            "members": len(r.get("members", [])),
+            "lastMessage": r.get("lastMessage", ""),
+            "lastActivity": r.get("lastActivity"),
+            "isJoined": user_id in r.get("members", []) if user_id else False
+        })
+    return {"rooms": result}
+
+@api_router.post("/social/join-room")
+async def join_room(data: dict):
+    user_id = data.get('user_id')
+    room_id = data.get('room_id')
+    room = await db.chat_rooms.find_one({"id": room_id})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    members = set(room.get("members", []))
+    members.add(user_id)
+    await db.chat_rooms.update_one({"id": room_id}, {"$set": {"members": list(members), "lastActivity": datetime.utcnow()}})
+    return {"message": "Joined"}
+
+@api_router.get("/social/leaderboard")
+async def social_leaderboard():
+    users = await db.users.find({}, {"password_hash": 0}).sort("xp", -1).to_list(100)
+    leaderboard = []
+    rank = 1
+    for u in users[:10]:
+        if '_id' in u:
+            u['_id'] = str(u['_id'])
+        leaderboard.append({
+            "rank": rank,
+            "name": u.get("name", "User"),
+            "level": u.get("level", 1),
+            "xp": u.get("xp", 0),
+            "streak": u.get("streak_days", 0),
+            "avatar": u.get("avatar_url")
+        })
+        rank += 1
+    return {"leaderboard": leaderboard}
 
 # Admin endpoints
 @api_router.get("/admin/users")
