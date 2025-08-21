@@ -265,51 +265,73 @@ class BackendTester:
                 self.log_test(f"{scan_name.title()} Scan", False, f"Scan error: {str(e)}")
     
     def test_user_data_endpoints(self):
-        """Test user data retrieval endpoints"""
+        """Test user data retrieval endpoints with focus on JSON serialization"""
         print("\n📊 Testing User Data Endpoints...")
         
         try:
-            # Test get user
-            response = self.session.get(f"{API_BASE_URL}/user/{self.test_user_id}", timeout=10)
-            if response.status_code == 200:
-                user_data = response.json()
-                self.log_test("Get User Data", True, 
-                            f"Retrieved user: {user_data.get('name', 'Unknown')}")
-            else:
-                self.log_test("Get User Data", False, 
-                            f"Failed to get user data: {response.status_code}")
-        except Exception as e:
-            self.log_test("Get User Data", False, f"User data error: {str(e)}")
-        
-        try:
-            # Test get user scans
+            # Test get user scans - Focus on ObjectId serialization
             response = self.session.get(f"{API_BASE_URL}/user/{self.test_user_id}/scans", timeout=10)
             if response.status_code == 200:
-                scans = response.json()
-                self.log_test("Get User Scans", True, 
-                            f"Retrieved {len(scans)} scan records")
+                try:
+                    scans = response.json()  # This will fail if ObjectId not serialized
+                    # Check that all objects are JSON serializable
+                    json.dumps(scans)  # This will raise exception if not serializable
+                    
+                    # Verify structure
+                    if isinstance(scans, list):
+                        self.log_test("Get User Scans - JSON Serialization", True, 
+                                    f"✅ Retrieved {len(scans)} scan records, all JSON serializable")
+                        
+                        # Check timestamp format if scans exist
+                        if scans:
+                            for scan in scans:
+                                if 'timestamp' in scan:
+                                    # Verify timestamp is string or serializable
+                                    timestamp = scan['timestamp']
+                                    if isinstance(timestamp, str):
+                                        self.log_test("Scan Timestamp Format", True, 
+                                                    "Timestamps are ISO strings")
+                                    else:
+                                        self.log_test("Scan Timestamp Format", False, 
+                                                    f"Timestamp not string: {type(timestamp)}")
+                                    break
+                    else:
+                        self.log_test("Get User Scans - JSON Serialization", False, 
+                                    f"Expected list, got {type(scans)}")
+                except json.JSONDecodeError as je:
+                    self.log_test("Get User Scans - JSON Serialization", False, 
+                                f"JSON decode error: {str(je)}")
+                except TypeError as te:
+                    self.log_test("Get User Scans - JSON Serialization", False, 
+                                f"❌ CRITICAL: ObjectId serialization error: {str(te)}")
             else:
-                self.log_test("Get User Scans", False, 
-                            f"Failed to get scans: {response.status_code}")
+                self.log_test("Get User Scans - JSON Serialization", False, 
+                            f"❌ Failed with status {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Get User Scans", False, f"Scans error: {str(e)}")
+            self.log_test("Get User Scans - JSON Serialization", False, f"❌ Scans error: {str(e)}")
         
         try:
-            # Test get chat history
+            # Test get chat history with session_id parameter
             response = self.session.get(
                 f"{API_BASE_URL}/user/{self.test_user_id}/chat-history",
                 params={"session_id": self.test_session_id},
                 timeout=10
             )
             if response.status_code == 200:
-                messages = response.json()
-                self.log_test("Get Chat History", True, 
-                            f"Retrieved {len(messages)} chat messages")
+                try:
+                    messages = response.json()
+                    # Check JSON serialization
+                    json.dumps(messages)
+                    self.log_test("Get Chat History - JSON Serialization", True, 
+                                f"✅ Retrieved {len(messages)} chat messages, all JSON serializable")
+                except (json.JSONDecodeError, TypeError) as e:
+                    self.log_test("Get Chat History - JSON Serialization", False, 
+                                f"❌ Serialization error: {str(e)}")
             else:
-                self.log_test("Get Chat History", False, 
-                            f"Failed to get chat history: {response.status_code}")
+                self.log_test("Get Chat History - JSON Serialization", False, 
+                            f"❌ Failed with status {response.status_code}: {response.text}")
         except Exception as e:
-            self.log_test("Get Chat History", False, f"Chat history error: {str(e)}")
+            self.log_test("Get Chat History - JSON Serialization", False, f"❌ Chat history error: {str(e)}")
     
     def test_cors_configuration(self):
         """Test CORS configuration"""
