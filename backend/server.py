@@ -324,6 +324,9 @@ async def get_chat_history(user_id: str, session_id: str):
     messages = await db.chat_messages.find(
         {"user_id": user_id, "session_id": session_id}
     ).sort("timestamp", 1).to_list(100)
+    # Convert ObjectId to string for JSON serialization
+    for message in messages:
+        message['_id'] = str(message['_id'])
     return messages
 
 # Health check
