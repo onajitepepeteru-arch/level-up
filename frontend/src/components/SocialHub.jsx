@@ -259,7 +259,7 @@ const SocialHub = ({ onNavigate }) => {
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Featured Rooms</h3>
         
-        {chatRooms.slice(0, 2).map((room) => (
+        {(chatRooms || []).slice(0, 2).map((room) => (
           <Card key={room.id} className="p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleRoomClick(room)}>
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-2">
