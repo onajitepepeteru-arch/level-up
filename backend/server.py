@@ -1097,6 +1097,30 @@ async def join_room(data: dict):
     await db.chat_rooms.update_one({"id": room_id}, {"$set": {"members": list(members), "lastActivity": datetime.utcnow()}})
     return {"message": "Joined"}
 
+# Users directory search
+class UserPublic(BaseModel):
+    id: str
+    name: str
+    username: str
+    avatar_url: Optional[str] = None
+
+@api_router.get("/users/search")
+async def search_users(q: str):
+    # Basic case-insensitive search on name or username
+    regex = {"$regex": q, "$options": "i"}
+    users = await db.users.find({"$or": [{"name": regex}, {"username": regex}]}, {"password_hash": 0}).limit(20).to_list(20)
+    result = []
+    for u in users:
+        if '_id' in u:
+            u['_id'] = str(u['_id'])
+        result.append({
+            "id": u.get("id"),
+            "name": u.get("name", "User"),
+            "username": u.get("username", "user"),
+            "avatar": u.get("avatar_url")
+        })
+    return {"users": result}
+
 # Chat room members/messages minimal endpoints
 @api_router.get("/chat-room/{room_id}/members")
 async def chat_room_members(room_id: str):
