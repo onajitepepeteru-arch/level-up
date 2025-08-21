@@ -329,6 +329,9 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ Media Backend Support working perfectly. POST /api/media/upload successfully handles PNG and MP4 files with proper content-type detection and UUID generation. GET /api/media/{media_id} correctly retrieves media with proper content-type headers. File size validation works (rejects >5MB with 413). Invalid media ID returns 404. All responses JSON serializable. Backend fully supports frontend media preview functionality - any frontend issues are not backend-related."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ AUTH REGRESSION SANITY CHECK PASSED: Media endpoints still working perfectly after auth changes. POST /api/media/upload handles file uploads successfully ✅. GET /api/media/{media_id} retrieves media with proper content-type headers ✅. All media functionality maintained post-auth updates."
 
 frontend:
   - task: "Authentication Flow"
