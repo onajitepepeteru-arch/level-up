@@ -303,6 +303,21 @@ backend:
         - agent: "testing"
         - comment: "✅ Social Media Image/Video Posts correctly NOT IMPLEMENTED as expected. POST /api/social/post with image/video files returns 422 Unprocessable Entity, properly rejecting media uploads. Text-only posts work perfectly. This is the expected behavior - image/video posting is not implemented, which matches the review requirement to verify this feature is not available."
 
+  - task: "Media Upload/Retrieval Backend Support"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Testing backend media upload and retrieval endpoints that support frontend media preview functionality"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ Media Backend Support working perfectly. POST /api/media/upload successfully handles PNG and MP4 files with proper content-type detection and UUID generation. GET /api/media/{media_id} correctly retrieves media with proper content-type headers. File size validation works (rejects >5MB with 413). Invalid media ID returns 404. All responses JSON serializable. Backend fully supports frontend media preview functionality - any frontend issues are not backend-related."
+
 frontend:
   - task: "Authentication Flow"
     implemented: true
