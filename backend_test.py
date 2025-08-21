@@ -41,6 +41,7 @@ class BackendTester:
         self.session = requests.Session()
         self.test_user_id = str(uuid.uuid4())
         self.test_session_id = str(uuid.uuid4())
+        self.test_email = f"alex.test.{self.test_user_id}@levelup.com"
         self.test_results = []
         
     def log_test(self, test_name, success, message, details=None):
