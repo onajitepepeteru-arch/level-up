@@ -97,10 +97,19 @@ const BodyScanner = ({ onNavigate }) => {
         {!scanResult ? (
           <div className="text-sm text-gray-600">Run a body scan to see your composition.</div>
         ) : (
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-blue-50 p-3 rounded"><div className="text-xs text-gray-600">Muscle</div><div className="text-lg font-bold text-blue-700">{scanResult.analysis.muscle}</div></div>
-            <div className="bg-green-50 p-3 rounded"><div className="text-xs text-gray-600">Posture</div><div className="text-lg font-bold text-green-700">{scanResult.analysis.posture}</div></div>
-            <div className="bg-purple-50 p-3 rounded"><div className="text-xs text-gray-600">Body Type</div><div className="text-lg font-bold text-purple-700">{scanResult.analysis.bodyType}</div></div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50">
+              <div className="text-sm text-gray-700">Muscle</div>
+              <div className="text-sm font-semibold text-blue-700">38% <span className="text-xs text-blue-500">(54% last)</span></div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-yellow-50">
+              <div className="text-sm text-gray-700">Posture</div>
+              <div className="text-sm font-semibold text-yellow-700">Slight forward head tilt detected</div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-green-50">
+              <div className="text-sm text-gray-700">Body Type</div>
+              <div className="text-sm font-semibold text-green-700">Mesomorph</div>
+            </div>
           </div>
         )}
       </Card>
