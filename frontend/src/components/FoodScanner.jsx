@@ -1,193 +1,326 @@
-import React, { useState } from "react";
-import { Card } from "./ui/card";
+import React, { useState, useRef } from "react";
 import { Button } from "./ui/button";
-import { Progress } from "./ui/progress";
+import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Camera, Upload, Utensils, TrendingUp, Calendar } from "lucide-react";
+import { Camera, Upload, Zap, RotateCcw } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
-import { mockFoodLog, mockNutrition } from "../mock";
 
 const FoodScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
+  const [scanResult, setScanResult] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const { toast } = useToast();
 
-  const handleScanMeal = () => {
-    setIsScanning(true);
-    setScanProgress(0);
-    
-    const interval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsScanning(false);
-          toast({
-            title: "Food Analysis Complete!",
-            description: "Nutritional breakdown is ready. +5 XP earned!"
-          });
-          return 100;
-        }
-        return prev + 15;
-      });
-    }, 200);
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image size must be less than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleUploadPhoto = () => {
-    toast({
-      title: "Upload Feature",
-      description: "Food photo upload will be implemented with backend integration!"
-    });
+  const handleScan = async () => {
+    if (!selectedImage) {
+      toast({
+        title: "No Image Selected",
+        description: "Please select a food image to scan first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsScanning(true);
+    
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        throw new Error('Please log in to continue');
+      }
+
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+      
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/scan/food?user_id=${userId}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setScanResult(data);
+        toast({
+          title: "Scan Complete!",
+          description: `Food scan completed! You earned ${data.xp_earned} XP.`,
+        });
+      } else {
+        throw new Error(data.detail || 'Scan failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Scan Failed",
+        description: error.message || "Unable to complete scan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const resetScan = () => {
+    setScanResult(null);
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
   };
 
   return (
-    <div className="p-4 space-y-6 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="text-center py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Food Scanner</h1>
-        <p className="text-gray-600 mt-1">Scan Your Meal</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Snap or upload a food photo for instant analysis.
-        </p>
-      </div>
-
-      {/* Scan Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          onClick={handleScanMeal}
-          disabled={isScanning}
-          className="h-20 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white flex flex-col items-center gap-2 transition-all duration-200 transform hover:scale-[1.02]"
-        >
-          <Camera className="w-6 h-6" />
-          <span className="font-medium">{isScanning ? 'Analyzing...' : 'Scan Meal'}</span>
-        </Button>
-
-        <Button
-          onClick={handleUploadPhoto}
-          variant="outline"
-          className="h-20 rounded-xl border-2 border-green-200 hover:border-green-300 bg-white hover:bg-green-50 flex flex-col items-center gap-2 transition-all duration-200"
-        >
-          <Upload className="w-6 h-6 text-green-600" />
-          <span className="font-medium text-green-600">Upload Photo</span>
-        </Button>
-      </div>
-
-      {/* Scanning Progress */}
-      {isScanning && (
-        <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50">
-          <div className="text-center mb-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 flex items-center justify-center">
-              <Utensils className="w-8 h-8 text-white animate-pulse" />
-            </div>
-            <h3 className="font-semibold text-gray-900">Analyzing Your Meal...</h3>
-            <p className="text-sm text-gray-600">AI is identifying nutrients</p>
-          </div>
-          <Progress value={scanProgress} className="h-3" />
-          <p className="text-center text-sm text-gray-500 mt-2">{scanProgress}% Complete</p>
-        </Card>
-      )}
-
-      {/* Recent Meal Analysis */}
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-            <Utensils className="w-5 h-5 text-green-600" />
-          </div>
+      <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900">Upload Meal Photo</h3>
-            <p className="text-sm text-gray-600">Analyze calories & nutrients</p>
+            <h1 className="text-2xl font-bold">Food Scanner</h1>
+            <p className="text-white/90">Track nutrition & calories</p>
           </div>
+          <div className="text-4xl">🍎</div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg text-center">
-            <p className="text-lg font-bold text-green-600">850</p>
-            <p className="text-xs text-gray-600">Calories Today</p>
-          </div>
-          <div className="p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg text-center">
-            <p className="text-lg font-bold text-blue-600">85%</p>
-            <p className="text-xs text-gray-600">Nutrition Goal</p>
-          </div>
-        </div>
-      </Card>
+      </div>
 
-      {/* Meal Log */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Meal Log</h3>
-          <Button variant="ghost" size="sm" className="text-blue-600">See All</Button>
-        </div>
-        
-        <div className="space-y-3">
-          {mockFoodLog.map((food) => (
-            <div key={food.id} className="flex items-center gap-3 p-3 rounded-lg bg-white border border-gray-200 hover:shadow-md transition-shadow">
-              <img 
-                src={food.image} 
-                alt={food.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{food.name}</p>
-                <p className="text-sm text-gray-600">{food.calories} kcal</p>
+      <div className="p-4 space-y-6">
+        {!scanResult ? (
+          <>
+            {/* Instructions */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Scanning Instructions</h3>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-green-600">1</span>
+                  </div>
+                  <p>Place food on a clean, plain surface</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-green-600">2</span>
+                  </div>
+                  <p>Ensure all food items are clearly visible</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-green-600">3</span>
+                  </div>
+                  <p>Take photo from directly above for best accuracy</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-green-600">4</span>
+                  </div>
+                  <p>Use good lighting to avoid shadows</p>
+                </div>
               </div>
-              <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700">
-                <TrendingUp className="w-4 h-4" />
+            </Card>
+
+            {/* Image Selection */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Upload Food Photo</h3>
+              
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Selected food" 
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <Button
+                      onClick={resetScan}
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                    >
+                      <RotateCcw size={16} />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">
+                    Food image selected. Ready to analyze nutrition!
+                  </p>
+                </div>
+              ) : (
+                <div 
+                  onClick={triggerFileSelect}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  <Upload size={48} className="mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600 mb-2">Click to select a food image</p>
+                  <p className="text-sm text-gray-500">Supports JPG, PNG up to 5MB</p>
+                </div>
+              )}
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+            </Card>
+
+            {/* Scan Button */}
+            <Button 
+              onClick={handleScan}
+              disabled={!selectedImage || isScanning}
+              className="w-full h-16 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-lg font-semibold"
+            >
+              {isScanning ? (
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Analyzing Nutrition...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Camera size={24} />
+                  <span>Scan Food</span>
+                </div>
+              )}
+            </Button>
+          </>
+        ) : (
+          <>
+            {/* Scan Results */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Nutrition Analysis</h3>
+                <Badge className="bg-green-500">
+                  <Zap size={14} className="mr-1" />
+                  +{scanResult.xp_earned} XP
+                </Badge>
+              </div>
+
+              <div className="space-y-6">
+                <div className="text-center py-4">
+                  <div className="text-6xl mb-4">🍎</div>
+                  <p className="text-gray-600">{scanResult.analysis?.message}</p>
+                </div>
+
+                {/* Nutrition Info */}
+                {scanResult.analysis?.nutrition && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Nutrition Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {scanResult.analysis.nutrition.calories}
+                        </div>
+                        <div className="text-sm text-gray-600">Calories</div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {scanResult.analysis.nutrition.protein}
+                        </div>
+                        <div className="text-sm text-gray-600">Protein</div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-yellow-600">
+                          {scanResult.analysis.nutrition.carbs}
+                        </div>
+                        <div className="text-sm text-gray-600">Carbs</div>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {scanResult.analysis.nutrition.fat}
+                        </div>
+                        <div className="text-sm text-gray-600">Fat</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {scanResult.analysis?.recommendations && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Nutrition Tips</h4>
+                    <div className="space-y-2">
+                      {scanResult.analysis.recommendations.map((rec, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                          <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-white">{index + 1}</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button 
+                onClick={resetScan}
+                variant="outline" 
+                className="w-full h-12"
+              >
+                Scan Another Meal
               </Button>
             </div>
-          ))}
-        </div>
-      </Card>
+          </>
+        )}
 
-      {/* Weekly Nutrition */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-orange-500" />
-            Weekly Nutrition
-          </h3>
-          <Button variant="ghost" size="sm" className="text-blue-600">Summary</Button>
-        </div>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Calories (weekly)</span>
-              <span className="font-medium text-gray-900">{mockNutrition.weekly.calories}</span>
+        {/* Quick Stats */}
+        <Card className="p-4">
+          <h4 className="font-semibold mb-3 text-center">Food Scan Benefits</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="text-center">
+              <div className="text-2xl mb-1">📊</div>
+              <p className="text-gray-600">Track Calories</p>
             </div>
-            <Progress value={103} className="h-2" />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Protein (g)</span>
-              <span className="font-medium text-gray-900">{mockNutrition.weekly.protein}</span>
+            <div className="text-center">
+              <div className="text-2xl mb-1">🥗</div>
+              <p className="text-gray-600">Nutrition Info</p>
             </div>
-            <Progress value={90} className="h-2" />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Carbs (g)</span>
-              <span className="font-medium text-gray-900">{mockNutrition.weekly.carbs}</span>
+            <div className="text-center">
+              <div className="text-2xl mb-1">🎯</div>
+              <p className="text-gray-600">Reach Goals</p>
             </div>
-            <Progress value={90} className="h-2" />
+            <div className="text-center">
+              <div className="text-2xl mb-1">⚡</div>
+              <p className="text-gray-600">Earn +5 XP</p>
+            </div>
           </div>
-        </div>
-      </Card>
-
-      {/* Achievements */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Food Tracking</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-4 bg-orange-50 rounded-xl">
-            <p className="text-2xl font-bold text-orange-600">7</p>
-            <p className="text-sm text-gray-600">Day Streak</p>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-xl">
-            <p className="text-2xl font-bold text-green-600">94%</p>
-            <p className="text-sm text-gray-600">Accuracy</p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
