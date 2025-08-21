@@ -554,8 +554,24 @@ const SocialHub = ({ onNavigate }) => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Social Hub</h1>
-        <p className="text-gray-600">Connect with the fitness community</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Social Hub</h1>
+            <p className="text-gray-600">Connect with the fitness community</p>
+          </div>
+          <button
+            aria-label="Notifications"
+            className="relative"
+            onClick={() => onNavigate && onNavigate('notifications')}
+          >
+            <Bell size={22} className="text-purple-600" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
