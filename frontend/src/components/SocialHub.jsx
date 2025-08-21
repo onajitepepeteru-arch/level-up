@@ -61,13 +61,13 @@ const SocialHub = ({ onNavigate }) => {
           setPosts(getMockPosts());
         }
       } else if (activeTab === 'chat') {
-        // Load chat rooms
+        // Load user's joined chat rooms only
         const response = await fetch(`${backendUrl}/api/social/chat-rooms?user_id=${userId}`);
         if (response.ok) {
           const data = await response.json();
-          setChatRooms(data.rooms || getMockChatRooms());
+          setChatRooms(data.rooms || []);
         } else {
-          setChatRooms(getMockChatRooms());
+          setChatRooms([]);
         }
       } else if (activeTab === 'leaderboard') {
         // Load leaderboard
