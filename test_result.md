@@ -500,7 +500,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI Chat Integration"
+    - "Users Search API"
+    - "Chat Rooms System"
+    - "Social Media Image/Video Posts"
   stuck_tasks:
     - "AI Chat Integration"
   test_all: false
