@@ -20,8 +20,13 @@ function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
 
-  const handleLogin = () => {
+  const handleLogin = (isExistingUser = true) => {
     setIsAuthenticated(true);
+    // If it's an existing user (login), skip onboarding
+    if (isExistingUser) {
+      setHasCompletedOnboarding(true);
+    }
+    // If it's a new user (signup), they'll go through onboarding
   };
 
   const handleOnboardingComplete = (userData) => {
