@@ -67,16 +67,16 @@ const Settings = ({ onLogout, onNavigate }) => {
       <Card className="p-6">
         <div className="flex items-center gap-4 mb-4">
           <img 
-            src={mockUser.avatar} 
+            src={(JSON.parse(localStorage.getItem('user') || '{}').avatar_url) || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(JSON.parse(localStorage.getItem('user') || '{}').name || 'U')}
             alt="Profile"
             className="w-16 h-16 rounded-full object-cover border-4 border-blue-200"
           />
           <div className="flex-1">
-            <h3 className="font-semibold text-lg text-gray-900">{mockUser.name}</h3>
-            <p className="text-gray-600">{mockUser.email}</p>
+            <h3 className="font-semibold text-lg text-gray-900">{JSON.parse(localStorage.getItem('user') || '{}').name || 'You'}</h3>
+            <p className="text-gray-600">{JSON.parse(localStorage.getItem('user') || '{}').email || ''}</p>
             <div className="flex items-center gap-2 mt-1">
-              <Badge className="bg-yellow-100 text-yellow-700">Level {mockUser.level}</Badge>
-              <Badge variant="secondary">{mockUser.xp.toLocaleString()} XP</Badge>
+              <Badge className="bg-yellow-100 text-yellow-700">Level {JSON.parse(localStorage.getItem('user') || '{}').level || 1}</Badge>
+              <Badge variant="secondary">{(JSON.parse(localStorage.getItem('user') || '{}').xp || 0).toLocaleString()} XP</Badge>
             </div>
           </div>
         </div>
