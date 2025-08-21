@@ -830,11 +830,14 @@ async def get_user_data(user_id: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Remove sensitive data
-    if 'password_hash' in user:
-        del user['password_hash']
+    # Serialize and remove sensitive data
+    user_response = serialize_doc(user)
+    if 'password_hash' in user_response:
+        del user_response['password_hash']
+    if '_id' in user_response:
+        del user_response['_id']
     
-    return user
+    return user_response
 
 @api_router.get("/user/{user_id}/scans")
 async def get_user_scans(user_id: str, scan_type: Optional[str] = None):
