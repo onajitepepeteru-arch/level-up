@@ -347,7 +347,7 @@ frontend:
     file: "/app/frontend/src/components/SocialHub.jsx"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "user"
@@ -355,6 +355,9 @@ frontend:
         - working: false
         - agent: "main"
         - comment: "Refactored preview to use URL.createObjectURL with cleanup across SocialHub and all Scanners; requesting automated frontend tests."
+        - working: false
+        - agent: "testing"
+        - comment: "❌ CRITICAL SESSION ISSUE: Cannot complete media preview testing due to authentication session not persisting between test runs. App keeps resetting to login screen, preventing access to Social Hub and scanner functionality. This appears to be the 'login regression' mentioned in review request. Auth registration works correctly with no 'string errors', but session management is broken."
   - task: "Share Modal & Share-to-Room"
     implemented: true
     working: NA
