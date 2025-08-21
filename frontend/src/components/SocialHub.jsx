@@ -25,6 +25,26 @@ const SocialHub = ({ onNavigate }) => {
     loadSocialData();
   }, [activeTab]);
 
+  useEffect(() => {
+    // Fetch unread notifications count for header badge
+    const fetchUnread = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+        const backendUrl = process.env.REACT_APP_BACKEND_URL;
+        const res = await fetch(`${backendUrl}/api/user/${userId}/notifications`);
+        if (res.ok) {
+          const data = await res.json();
+          const count = (data || []).filter(n => !n.read).length;
+          setUnreadCount(count);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchUnread();
+  }, []);
+
   const loadSocialData = async () => {
     setIsLoading(true);
     try {
