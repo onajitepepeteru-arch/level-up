@@ -1057,6 +1057,32 @@ async def get_chat_rooms(user_id: Optional[str] = None):
         })
     return {"rooms": result}
 
+@api_router.post("/social/chat-room/create")
+async def create_chat_room(room: dict):
+    name = room.get('name')
+    if not name:
+        raise HTTPException(status_code=400, detail="Room name is required")
+    creator_id = room.get('creator_id')
+    new_room = ChatRoomModel(
+        name=name,
+        description=room.get('description', ''),
+        category=room.get('category', 'general'),
+        type=room.get('type', 'public'),
+        members=[creator_id] if creator_id else []
+    )
+    await db.chat_rooms.insert_one(new_room.dict())
+    return {
+        "id": new_room.id,
+        "name": new_room.name,
+        "description": new_room.description,
+        "category": new_room.category,
+        "type": new_room.type,
+        "members": len(new_room.members),
+        "lastMessage": new_room.lastMessage,
+        "lastActivity": new_room.lastActivity,
+        "isJoined": True
+    }
+
 @api_router.post("/social/join-room")
 async def join_room(data: dict):
     user_id = data.get('user_id')
@@ -1068,6 +1094,45 @@ async def join_room(data: dict):
     members.add(user_id)
     await db.chat_rooms.update_one({"id": room_id}, {"$set": {"members": list(members), "lastActivity": datetime.utcnow()}})
     return {"message": "Joined"}
+
+# Chat room members/messages minimal endpoints
+@api_router.get("/chat-room/{room_id}/members")
+async def chat_room_members(room_id: str):
+    room = await db.chat_rooms.find_one({"id": room_id})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    member_ids = room.get('members', [])
+    users = await db.users.find({"id": {"$in": member_ids}}).to_list(len(member_ids) or 1)
+    members = [{"id": u.get('id'), "name": u.get('name', 'User'), "avatar": u.get('avatar_url'), "role": 'member', "online": True} for u in users]
+    return {"members": members}
+
+@api_router.get("/chat-room/{room_id}/messages")
+async def chat_room_messages(room_id: str, user_id: Optional[str] = None):
+    msgs = await db.chat_room_messages.find({"room_id": room_id}).sort("timestamp", 1).to_list(200)
+    for m in msgs:
+        if '_id' in m:
+            m['_id'] = str(m['_id'])
+    return {"messages": msgs}
+
+@api_router.post("/chat-room/message")
+async def post_chat_room_message(data: dict):
+    user_id = data.get('user_id')
+    room_id = data.get('room_id')
+    message = data.get('message')
+    if not (user_id and room_id and message):
+        raise HTTPException(status_code=400, detail="Missing fields")
+    user = await db.users.find_one({"id": user_id})
+    msg = {
+        "id": str(uuid.uuid4()),
+        "room_id": room_id,
+        "user": {"id": user_id, "name": user.get('name', 'User') if user else 'User', "avatar": user.get('avatar_url') if user else None},
+        "message": message,
+        "timestamp": datetime.utcnow(),
+        "type": data.get('type', 'text')
+    }
+    await db.chat_room_messages.insert_one(msg)
+    await db.chat_rooms.update_one({"id": room_id}, {"$set": {"lastMessage": message, "lastActivity": datetime.utcnow()}})
+    return msg
 
 @api_router.get("/social/leaderboard")
 async def social_leaderboard():
