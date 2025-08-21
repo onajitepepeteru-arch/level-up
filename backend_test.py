@@ -240,12 +240,12 @@ class BackendTester:
         for scan_name, endpoint, expected_xp in scan_types:
             try:
                 files = {'file': ('test_image.jpg', dummy_file_content, 'image/jpeg')}
-                data = {'user_id': self.test_user_id}
+                params = {'user_id': self.test_user_id}  # user_id as query parameter
                 
                 response = self.session.post(
                     f"{API_BASE_URL}{endpoint}",
                     files=files,
-                    data=data,
+                    params=params,  # Changed from data to params
                     timeout=15
                 )
                 
