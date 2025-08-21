@@ -112,7 +112,8 @@ class BackendTester:
             
             if response.status_code == 200:
                 user_data = response.json()
-                self.test_user_id = user_data.get('id', self.test_user_id)
+                user = user_data.get('user', {})
+                self.test_user_id = user.get('id', self.test_user_id)
                 self.log_test("User Registration", True, 
                             f"User registered successfully with ID: {self.test_user_id}")
                 return True
