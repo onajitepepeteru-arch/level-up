@@ -543,46 +543,87 @@ class BackendTester:
         except Exception as e:
             self.log_test("Auth Login - JSON Serialization", False, f"❌ Login error: {str(e)}")
     
-    def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 Starting LevelUP Backend Testing Suite")
-        print("=" * 50)
+    def run_focused_tests(self):
+        """Run focused backend tests as requested in review"""
+        print("🎯 Starting Focused Backend Testing Suite")
+        print("Focus: User Data Retrieval, Notifications, Auth Serialization")
+        print("=" * 60)
         
         # Test server health first
         if not self.test_server_health():
             print("\n❌ Server health check failed. Stopping tests.")
             return False
         
-        # Run all other tests
-        self.test_user_registration()
-        self.test_user_login()
+        # Create a test user for the focused tests
+        print("\n👤 Setting up test user...")
+        if not self.test_user_registration():
+            print("❌ Failed to create test user. Some tests may fail.")
+        
+        # Complete onboarding to have data for testing
+        print("📋 Completing onboarding for test data...")
         self.test_onboarding()
-        self.test_ai_chat()
+        
+        # Create some scan data for testing user data retrieval
+        print("📸 Creating test scan data...")
         self.test_scanning_endpoints()
+        
+        # Create chat data for testing
+        print("💬 Creating test chat data...")
+        self.test_ai_chat()
+        
+        # Now run the focused tests
+        print("\n" + "=" * 60)
+        print("🎯 FOCUSED TESTS - As Requested")
+        print("=" * 60)
+        
+        # 1) User Data Retrieval APIs
         self.test_user_data_endpoints()
-        self.test_cors_configuration()
+        
+        # 2) Notifications API  
+        self.test_notifications_api()
+        
+        # 3) Auth Login Serialization
+        self.test_auth_login_serialization()
         
         # Summary
-        print("\n" + "=" * 50)
-        print("📊 TEST SUMMARY")
-        print("=" * 50)
+        print("\n" + "=" * 60)
+        print("📊 FOCUSED TEST SUMMARY")
+        print("=" * 60)
         
-        total_tests = len(self.test_results)
-        passed_tests = sum(1 for result in self.test_results if result['success'])
-        failed_tests = total_tests - passed_tests
+        # Filter results to show only the focused tests
+        focused_test_keywords = [
+            "JSON Serialization", "Notifications", "Auth Register", "Auth Login", 
+            "User ID UUID", "Token String", "ObjectId Leaks", "Unread Count"
+        ]
         
-        print(f"Total Tests: {total_tests}")
-        print(f"✅ Passed: {passed_tests}")
-        print(f"❌ Failed: {failed_tests}")
-        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
+        focused_results = []
+        for result in self.test_results:
+            if any(keyword in result['test'] for keyword in focused_test_keywords):
+                focused_results.append(result)
         
-        if failed_tests > 0:
-            print("\n❌ FAILED TESTS:")
-            for result in self.test_results:
+        total_focused = len(focused_results)
+        passed_focused = sum(1 for result in focused_results if result['success'])
+        failed_focused = total_focused - passed_focused
+        
+        print(f"Focused Tests: {total_focused}")
+        print(f"✅ Passed: {passed_focused}")
+        print(f"❌ Failed: {failed_focused}")
+        if total_focused > 0:
+            print(f"Success Rate: {(passed_focused/total_focused)*100:.1f}%")
+        
+        if failed_focused > 0:
+            print("\n❌ FAILED FOCUSED TESTS:")
+            for result in focused_results:
                 if not result['success']:
                     print(f"  - {result['test']}: {result['message']}")
         
-        return failed_tests == 0
+        # Show all test results for context
+        print(f"\n📋 TOTAL TESTS RUN: {len(self.test_results)}")
+        total_passed = sum(1 for result in self.test_results if result['success'])
+        print(f"✅ Total Passed: {total_passed}")
+        print(f"❌ Total Failed: {len(self.test_results) - total_passed}")
+        
+        return failed_focused == 0
 
 if __name__ == "__main__":
     tester = BackendTester()
