@@ -1,4 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Depends, Form
+# NOTE: All backend routes are prefixed with /api via APIRouter to comply with ingress
+
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
