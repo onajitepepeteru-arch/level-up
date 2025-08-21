@@ -485,55 +485,6 @@ const SocialHub = ({ onNavigate }) => {
     </div>
   );
 
-  const renderChatRooms = () => (
-    <div className="space-y-4">
-      {/* Search and Create */}
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input placeholder="Search chat rooms..." className="pl-10" />
-        </div>
-        <Button size="sm">
-          <Plus size={16} className="mr-2" />
-          Create
-        </Button>
-      </div>
-
-      {/* Chat Rooms */}
-      {chatRooms.map((room) => (
-        <Card key={room.id} className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="font-semibold">{room.name}</h3>
-              <p className="text-sm text-gray-600">{room.description}</p>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              <Users size={12} className="mr-1" />
-              {room.members}
-            </Badge>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-500">
-              <p className="truncate max-w-48">{room.lastMessage}</p>
-              <p>{formatTimeAgo(room.lastActivity)}</p>
-            </div>
-            
-            {room.isJoined ? (
-              <Button variant="outline" size="sm">
-                View Chat
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => handleJoinRoom(room.id)}>
-                Join
-              </Button>
-            )}
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-
   const renderLeaderboard = () => (
     <div className="space-y-3">
       {leaderboard.map((user, index) => (
