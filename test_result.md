@@ -374,16 +374,15 @@ frontend:
         - comment: "⚠️ CANNOT TEST: Unable to test Share Modal & Share-to-Room functionality due to authentication session persistence issue. App resets to login screen preventing access to Social Hub features. Need to fix session management before testing this feature."
   - task: "Chat Advanced Settings & Invite"
     implemented: true
-    working: NA
+    working: "NA"
     file: "/app/frontend/src/components/ChatRoom.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Added Settings modal (edit name/description/type/maxMembers) and Invite modal with user search + invite API; requests UI validation."
-    status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Ready to test login and signup functionality with email/password and social login options"
@@ -393,6 +392,9 @@ frontend:
         - working: true
         - agent: "main"
         - comment: "Updated SocialHub header to include notifications badge and navigation to notifications screen; no behavioral change to auth screen."
+        - working: "NA"
+        - agent: "testing"
+        - comment: "⚠️ CANNOT TEST: Unable to test Chat Advanced Settings & Invite functionality due to authentication session persistence issue. App resets to login screen preventing access to chat room features. Need to fix session management before testing this feature."
 
   - task: "Onboarding Flow"
     implemented: true
