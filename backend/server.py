@@ -282,9 +282,9 @@ async def complete_onboarding(onboarding_data: OnboardingData):
             "age": onboarding_data.age,
             "gender": onboarding_data.gender,
             "goals": onboarding_data.goals,
-            "body_type": onboarding_data.bodyType,
-            "activity_level": onboarding_data.activityLevel,
-            "health_conditions": onboarding_data.healthConditions,
+            "body_type": onboarding_data.body_type,
+            "activity_level": onboarding_data.activity_level,
+            "health_conditions": onboarding_data.health_conditions,
             "onboarding_completed": True,
             "xp": 50,  # Initial XP for completing onboarding
         }
