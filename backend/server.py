@@ -260,9 +260,11 @@ async def register_user(user_data: UserRegistration):
         # Create JWT token
         token = create_jwt_token(user_dict["id"])
         
-        # Remove password hash from response
+        # Remove password hash and _id from response
         user_response = serialize_doc(user_dict)
         del user_response['password_hash']
+        if '_id' in user_response:
+            del user_response['_id']
         
         return {
             "message": "User registered successfully",
