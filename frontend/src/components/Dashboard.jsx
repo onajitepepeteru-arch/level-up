@@ -203,9 +203,6 @@ const Dashboard = ({ onNavigate }) => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Your Avatar</h3>
-            <Button variant="outline" size="sm">
-              Customize
-            </Button>
           </div>
           
           <div className="flex items-center gap-4">
