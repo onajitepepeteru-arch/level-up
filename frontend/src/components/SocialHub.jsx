@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 // import { Avatar } from "./ui/avatar";
-import { Send, Heart, MessageCircle, Share, Trophy, Users, Plus, Search, Hash } from "lucide-react";
+import { Send, Heart, MessageCircle, Share, Trophy, Users, Plus, Search, Hash, Bell } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import ChatRoom from "./ChatRoom";
 import CreateChatRoom from "./CreateChatRoom";
