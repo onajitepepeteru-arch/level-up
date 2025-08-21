@@ -16,7 +16,7 @@ import {
   Zap,
   Star
 } from "lucide-react";
-import { mockUser } from "../mock";
+// import { mockUser } from "../mock";
 
 const Settings = ({ onLogout, onNavigate }) => {
   const [notifications, setNotifications] = useState({
