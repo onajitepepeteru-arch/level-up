@@ -299,9 +299,11 @@ async def login_user(user_data: UserLogin):
         # Create JWT token
         token = create_jwt_token(user_doc['id'])
         
-        # Serialize and remove password hash from response
+        # Serialize and remove password hash and _id from response
         user_response = serialize_doc(user_doc)
         del user_response['password_hash']
+        if '_id' in user_response:
+            del user_response['_id']
         
         return {
             "message": "Login successful",
