@@ -318,7 +318,7 @@ class BackendTester:
         try:
             # Test preflight request
             headers = {
-                'Origin': 'https://fitness-revival.preview.emergentagent.com',
+                'Origin': 'https://fitness-tracker-93.preview.emergentagent.com',
                 'Access-Control-Request-Method': 'POST',
                 'Access-Control-Request-Headers': 'Content-Type'
             }
