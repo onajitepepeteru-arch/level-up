@@ -238,28 +238,35 @@ async def register_user(user_data: UserRegistration):
             raise HTTPException(status_code=400, detail="Email already registered")
         
         # Create new user with hashed password
-        user = User(
-            name=user_data.name,
-            email=user_data.email,
-            password_hash=hash_password(user_data.password),
-            level=1,
-            xp=0,
-            subscription_plan="Free"
-        )
+        user_dict = {
+            "id": str(uuid.uuid4()),
+            "name": user_data.name,
+            "email": user_data.email,
+            "password_hash": hash_password(user_data.password),
+            "level": 1,
+            "xp": 0,
+            "subscription_plan": "Free",
+            "subscription_active": False,
+            "onboarding_completed": False,
+            "created_at": datetime.utcnow(),
+            "last_login": None,
+            "total_scans": 0,
+            "streak_days": 0
+        }
         
         # Insert user into database
-        await db.users.insert_one(user.dict())
+        result = await db.users.insert_one(user_dict)
         
         # Create JWT token
-        token = create_jwt_token(user.id)
+        token = create_jwt_token(user_dict["id"])
         
         # Remove password hash from response
-        user_dict = user.dict()
-        del user_dict['password_hash']
+        user_response = serialize_doc(user_dict)
+        del user_response['password_hash']
         
         return {
             "message": "User registered successfully",
-            "user": user_dict,
+            "user": user_response,
             "token": token
         }
         
@@ -273,29 +280,30 @@ async def register_user(user_data: UserRegistration):
 async def login_user(user_data: UserLogin):
     try:
         # Find user by email
-        user = await db.users.find_one({"email": user_data.email})
-        if not user:
+        user_doc = await db.users.find_one({"email": user_data.email})
+        if not user_doc:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
         # Verify password
-        if not verify_password(user_data.password, user['password_hash']):
+        if not verify_password(user_data.password, user_doc['password_hash']):
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
         # Update last login
         await db.users.update_one(
-            {"id": user['id']},
+            {"email": user_data.email},
             {"$set": {"last_login": datetime.utcnow()}}
         )
         
         # Create JWT token
-        token = create_jwt_token(user['id'])
+        token = create_jwt_token(user_doc['id'])
         
-        # Remove password hash from response
-        del user['password_hash']
+        # Serialize and remove password hash from response
+        user_response = serialize_doc(user_doc)
+        del user_response['password_hash']
         
         return {
             "message": "Login successful",
-            "user": user,
+            "user": user_response,
             "token": token
         }
         
