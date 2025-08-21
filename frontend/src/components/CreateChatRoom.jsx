@@ -57,7 +57,7 @@ const CreateChatRoom = ({ onBack, onCreate }) => {
       };
       
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/chat-room/create`, {
+      const response = await fetch(`${backendUrl}/api/social/chat-room/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRoom)
