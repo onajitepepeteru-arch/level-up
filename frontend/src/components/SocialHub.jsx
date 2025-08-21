@@ -391,34 +391,6 @@ const SocialHub = ({ onNavigate }) => {
     }
   };
 
-  const handleJoinRoom = async (roomId) => {
-    try {
-      const userId = localStorage.getItem('userId');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      
-      await fetch(`${backendUrl}/api/social/join-room`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, room_id: roomId })
-      });
-      
-      setChatRooms(prev => prev.map(room => 
-        room.id === roomId 
-          ? { ...room, isJoined: true, members: room.members + 1 }
-          : room
-      ));
-      
-      toast({ title: "Success", description: "Joined chat room successfully!" });
-    } catch (error) {
-      setChatRooms(prev => prev.map(room => 
-        room.id === roomId 
-          ? { ...room, isJoined: true, members: room.members + 1 }
-          : room
-      ));
-      toast({ title: "Success", description: "Joined chat room successfully!" });
-    }
-  };
-
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
     const diff = now - new Date(timestamp);
