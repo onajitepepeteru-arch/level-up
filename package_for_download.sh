@@ -35,6 +35,20 @@ cp API_DOCUMENTATION.md $PACKAGE_DIR/
 cp FINAL_SUMMARY.md $PACKAGE_DIR/
 cp PRODUCTION_SUMMARY.md $PACKAGE_DIR/
 
+# Create env samples (no secrets)
+echo "🧩 Adding .env.sample files..."
+mkdir -p $PACKAGE_DIR/frontend
+mkdir -p $PACKAGE_DIR/backend
+cat > $PACKAGE_DIR/frontend/.env.sample << 'EOF'
+# Frontend env
+REACT_APP_BACKEND_URL=https://your-backend-domain.com
+EOF
+cat > $PACKAGE_DIR/backend/.env.sample << 'EOF'
+# Backend env
+# Replace with your real Mongo connection string (do not commit secrets)
+MONGO_URL=mongodb+srv://<username>:<password>@<cluster>/<db>?retryWrites=true&w=majority
+EOF
+
 # Create .gitignore for the package
 cat > $PACKAGE_DIR/.gitignore << 'EOF'
 # Dependencies
