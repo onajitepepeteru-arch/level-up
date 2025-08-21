@@ -98,14 +98,20 @@ const FaceScanner = ({ onNavigate }) => {
         {!scanResult ? (
           <div className="text-sm text-gray-600">Run a face scan to see your analysis.</div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-pink-50 p-3 rounded">
-              <div className="font-medium">Skin Type</div>
-              <div className="text-sm text-gray-700">{scanResult.analysis.skinType}</div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-xl border bg-pink-50">
+              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center"><CheckCircle className="w-5 h-5 text-pink-600" /></div>
+              <div className="flex-1">
+                <div className="font-medium">Skin Type: {scanResult.analysis.skinType}</div>
+                <div className="text-sm text-gray-700">Oily T-zone, dry cheek area</div>
+              </div>
             </div>
-            <div className="bg-yellow-50 p-3 rounded">
-              <div className="font-medium">Areas for Improvement</div>
-              <div className="text-sm text-gray-700">{scanResult.analysis.concerns}</div>
+            <div className="flex items-center gap-3 p-3 rounded-xl border bg-yellow-50">
+              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-yellow-600" /></div>
+              <div className="flex-1">
+                <div className="font-medium">Skin Type: {scanResult.analysis.skinType}</div>
+                <div className="text-sm text-gray-700">Minor acne, slight acne tone</div>
+              </div>
             </div>
           </div>
         )}
