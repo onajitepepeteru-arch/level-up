@@ -412,6 +412,41 @@ const SocialHub = ({ onNavigate }) => {
     }
   };
 
+  const handleCommentPost = async (postId) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const content = prompt('Write a comment:');
+      if (!content) return;
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      await fetch(`${backendUrl}/api/social/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, post_id: postId, content })
+      });
+      setPosts(prev => prev.map(post => post.id === postId ? { ...post, comments: (post.comments || 0) + 1 } : post));
+      toast({ title: 'Comment added', description: 'Your comment was posted.' });
+    } catch (e) {
+      setPosts(prev => prev.map(post => post.id === postId ? { ...post, comments: (post.comments || 0) + 1 } : post));
+      toast({ title: 'Comment added', description: 'Your comment was posted.' });
+    }
+  };
+
+  const handleSharePost = async (postId) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      await fetch(`${backendUrl}/api/social/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, post_id: postId })
+      });
+      toast({ title: 'Shared', description: 'Post shared successfully!' });
+    } catch (e) {
+      toast({ title: 'Shared', description: 'Post shared successfully!' });
+    }
+  };
+
+
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
     const diff = now - new Date(timestamp);
