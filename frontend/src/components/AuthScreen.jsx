@@ -42,7 +42,8 @@ const AuthScreen = ({ onLogin }) => {
     });
     
     setTimeout(() => {
-      onLogin();
+      // Pass whether this is an existing user (login) or new user (signup)
+      onLogin(isLogin);
     }, 1000);
   };
 
