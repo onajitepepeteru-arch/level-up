@@ -3,7 +3,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
-import { Camera, Upload, Sparkles, History, RotateCcw } from "lucide-react";
+import { Camera, Upload, Sparkles, History, RotateCcw, CheckCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
 const FaceScanner = ({ onNavigate }) => {
