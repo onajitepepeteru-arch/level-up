@@ -17,6 +17,40 @@ import base64
 from PIL import Image
 import io
 import asyncio
+import json
+
+# Custom JSON encoder for MongoDB ObjectId
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, '__dict__'):
+            return {key: str(value) if str(type(value)) == "<class 'bson.objectid.ObjectId'>" else value 
+                   for key, value in obj.__dict__.items()}
+        return super().default(obj)
+
+def serialize_doc(doc):
+    """Convert MongoDB document to JSON-serializable format"""
+    if doc is None:
+        return None
+    
+    if isinstance(doc, list):
+        return [serialize_doc(item) for item in doc]
+    
+    if isinstance(doc, dict):
+        result = {}
+        for key, value in doc.items():
+            if key == '_id':
+                result[key] = str(value)
+            elif hasattr(value, '__dict__'):
+                result[key] = serialize_doc(value.__dict__)
+            elif isinstance(value, list):
+                result[key] = [serialize_doc(item) for item in value]
+            elif isinstance(value, dict):
+                result[key] = serialize_doc(value)
+            else:
+                result[key] = value
+        return result
+    
+    return doc
 
 # Content moderation imports
 try:
