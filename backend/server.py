@@ -67,8 +67,6 @@ async def register_user(payload: RegisterRequest):
     await db.users.insert_one(user)
     return {"user": {"id": user_id, "name": payload.name, "email": payload.email, "username": username}, "token": str(uuid.uuid4())}
 
-@api_router.get("/user/{user_id}")
-
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -97,6 +95,7 @@ async def login_user(payload: LoginRequest):
     user_resp = {"id": user.get("id"), "name": user.get("name"), "email": user.get("email"), "username": user.get("username")}
     return {"user": user_resp, "token": str(uuid.uuid4())}
 
+@api_router.get("/user/{user_id}")
 async def get_user_data(user_id: str):
     user = await db.users.find_one({"id": user_id})
     if not user:
