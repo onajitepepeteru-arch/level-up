@@ -131,7 +131,7 @@ class BackendTester:
         try:
             # Note: The login endpoint expects query parameters
             login_data = {
-                "email": f"alex.test.{self.test_user_id}@levelup.com",
+                "email": self.test_email,
                 "password": "securepass123"
             }
             
