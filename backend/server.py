@@ -68,6 +68,35 @@ async def register_user(payload: RegisterRequest):
     return {"user": {"id": user_id, "name": payload.name, "email": payload.email, "username": username}, "token": str(uuid.uuid4())}
 
 @api_router.get("/user/{user_id}")
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@api_router.post("/auth/login")
+async def login_user(payload: LoginRequest):
+    # For MVP: accept any existing email or create user if not found – return UUID and token
+    user = await db.users.find_one({"email": payload.email})
+    if not user:
+        # auto-register mimic to avoid login string errors
+        user_id = str(uuid.uuid4())
+        username = payload.email.split("@")[0]
+        new_user = {
+            "id": user_id,
+            "name": username,
+            "email": payload.email,
+            "username": username,
+            "created_at": datetime.utcnow(),
+            "level": 1,
+            "xp": 0,
+            "streak_days": 0,
+        }
+        await db.users.insert_one(new_user)
+        user = new_user
+    # Ensure JSON safe, never return ObjectId
+    user_resp = {"id": user.get("id"), "name": user.get("name"), "email": user.get("email"), "username": user.get("username")}
+    return {"user": user_resp, "token": str(uuid.uuid4())}
+
 async def get_user_data(user_id: str):
     user = await db.users.find_one({"id": user_id})
     if not user:
