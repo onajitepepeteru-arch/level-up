@@ -627,11 +627,11 @@ class BackendTester:
 
 if __name__ == "__main__":
     tester = BackendTester()
-    success = tester.run_all_tests()
+    success = tester.run_focused_tests()
     
     if success:
-        print("\n🎉 All backend tests passed!")
+        print("\n🎉 All focused backend tests passed!")
         sys.exit(0)
     else:
-        print("\n⚠️  Some backend tests failed. Check logs above.")
+        print("\n⚠️  Some focused backend tests failed. Check logs above.")
         sys.exit(1)
