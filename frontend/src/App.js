@@ -15,6 +15,7 @@ import ActivityCalendar from "./components/ActivityCalendar";
 import NotificationsScreen from "./components/NotificationsScreen";
 import BottomNavigation from "./components/BottomNavigation";
 import { Toaster } from "./components/ui/toaster";
+import ScanHistory from "./components/ScanHistory";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -47,29 +48,24 @@ function App() {
 
   const handleLogin = (isExistingUser = true) => {
     setIsAuthenticated(true);
-    // If it's an existing user (login), skip onboarding
     if (isExistingUser) {
-      // Check if user has completed onboarding from stored data
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
           const user = JSON.parse(storedUser);
           setHasCompletedOnboarding(user.onboarding_completed || true);
         } catch (error) {
-          setHasCompletedOnboarding(true); // Default to true for login
+          setHasCompletedOnboarding(true);
         }
       } else {
         setHasCompletedOnboarding(true);
       }
     }
-    // If it's a new user (signup), they'll go through onboarding
   };
 
   const handleOnboardingComplete = (onboardingData) => {
     console.log("Onboarding completed with data:", onboardingData);
     setHasCompletedOnboarding(true);
-    
-    // Update stored user data
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -128,17 +124,19 @@ function App() {
         return <ActivityCalendar onBack={() => setCurrentScreen('main')} />;
       case 'notifications':
         return <NotificationsScreen onBack={() => setCurrentScreen('main')} />;
+      case 'scan-history':
+        return <ScanHistory onBack={() => setCurrentScreen('main')} />;
       case 'main':
       default:
         switch(currentTab) {
           case 'dashboard':
             return <Dashboard onNavigate={handleNavigate} />;
           case 'body-scanner':
-            return <BodyScanner />;
+            return <BodyScanner onNavigate={handleNavigate} />;
           case 'face-scanner':
-            return <FaceScanner />;
+            return <FaceScanner onNavigate={handleNavigate} />;
           case 'food-scanner':
-            return <FoodScanner />;
+            return <FoodScanner onNavigate={handleNavigate} />;
           case 'social-hub':
             return <SocialHub onNavigate={handleNavigate} />;
           default:
@@ -151,7 +149,6 @@ function App() {
     <div className="App min-h-screen bg-gray-50">
       <BrowserRouter>
         <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
-          {/* Mobile Status Bar */}
           <div className="flex justify-between items-center px-4 py-2 bg-white text-black text-sm font-medium">
             <span>{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             <div className="flex items-center gap-1">
@@ -168,13 +165,7 @@ function App() {
               </div>
             </div>
           </div>
-
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto pb-20">
-            {renderCurrentScreen()}
-          </div>
-
-          {/* Bottom Navigation */}
+          <div className="flex-1 overflow-y-auto pb-20">{renderCurrentScreen()}</div>
           {currentScreen === 'main' && (
             <BottomNavigation 
               currentTab={currentTab} 
