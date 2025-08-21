@@ -575,7 +575,207 @@ async def analyze_food_scan(user_id: str, file: UploadFile = File(...)):
         logger.error(f"Food scan error: {str(e)}")
         raise HTTPException(status_code=500, detail="Food scan failed")
 
-# User data endpoints
+# Google and Apple authentication endpoints
+@api_router.post("/auth/google")
+async def google_auth(request: dict):
+    try:
+        # For now, create a placeholder endpoint
+        # In production, verify the Google credential token
+        credential = request.get('credential')
+        
+        if not credential:
+            raise HTTPException(status_code=400, detail="Google credential required")
+        
+        # Mock user data (replace with actual Google token verification)
+        user_data = {
+            "name": "Google User",
+            "email": "google.user@example.com",
+            "google_id": "google_123456"
+        }
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"email": user_data["email"]})
+        
+        if existing_user:
+            # Update last login
+            await db.users.update_one(
+                {"id": existing_user['id']},
+                {"$set": {"last_login": datetime.utcnow()}}
+            )
+            user = existing_user
+        else:
+            # Create new user
+            user = User(
+                name=user_data["name"],
+                email=user_data["email"],
+                level=1,
+                xp=0,
+                subscription_plan="Free",
+                onboarding_completed=False
+            )
+            await db.users.insert_one(user.dict())
+        
+        # Create JWT token
+        token = create_jwt_token(user['id'] if existing_user else user.id)
+        
+        # Remove password hash from response
+        user_dict = dict(user) if existing_user else user.dict()
+        if 'password_hash' in user_dict:
+            del user_dict['password_hash']
+        
+        return {
+            "message": "Google login successful",
+            "user": user_dict,
+            "token": token
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Google auth error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Google authentication failed")
+
+@api_router.post("/auth/apple")
+async def apple_auth(request: dict):
+    try:
+        # For now, create a placeholder endpoint
+        # In production, verify the Apple identity token
+        id_token = request.get('id_token')
+        code = request.get('code')
+        
+        if not id_token:
+            raise HTTPException(status_code=400, detail="Apple identity token required")
+        
+        # Mock user data (replace with actual Apple token verification)
+        user_data = {
+            "name": "Apple User",
+            "email": "apple.user@example.com",
+            "apple_id": "apple_123456"
+        }
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"email": user_data["email"]})
+        
+        if existing_user:
+            # Update last login
+            await db.users.update_one(
+                {"id": existing_user['id']},
+                {"$set": {"last_login": datetime.utcnow()}}
+            )
+            user = existing_user
+        else:
+            # Create new user
+            user = User(
+                name=user_data["name"],
+                email=user_data["email"],
+                level=1,
+                xp=0,
+                subscription_plan="Free",
+                onboarding_completed=False
+            )
+            await db.users.insert_one(user.dict())
+        
+        # Create JWT token
+        token = create_jwt_token(user['id'] if existing_user else user.id)
+        
+        # Remove password hash from response
+        user_dict = dict(user) if existing_user else user.dict()
+        if 'password_hash' in user_dict:
+            del user_dict['password_hash']
+        
+        return {
+            "message": "Apple login successful",
+            "user": user_dict,
+            "token": token
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Apple auth error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Apple authentication failed")
+
+# Avatar upload endpoint
+@api_router.post("/upload/avatar")
+async def upload_avatar(user_id: str, file: UploadFile = File(...)):
+    try:
+        # Validate file
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        if file.size > 5 * 1024 * 1024:  # 5MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+        
+        # Read file data
+        file_data = await file.read()
+        
+        # Content moderation check
+        is_approved = await content_moderation_check(file_data)
+        
+        if not is_approved:
+            raise HTTPException(status_code=400, detail="Image contains inappropriate content")
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = Path("/app/uploads/avatars")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+        filename = f"{user_id}_{int(datetime.utcnow().timestamp())}.{file_extension}"
+        file_path = upload_dir / filename
+        
+        # Save file
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+        
+        # Update user's avatar URL
+        avatar_url = f"/uploads/avatars/{filename}"
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"avatar_url": avatar_url}}
+        )
+        
+        return {
+            "message": "Avatar uploaded successfully",
+            "avatar_url": avatar_url
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Avatar upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Avatar upload failed")
+
+# Update user profile endpoint
+@api_router.patch("/user/{user_id}")
+async def update_user_profile(user_id: str, update_data: dict):
+    try:
+        # Remove sensitive fields that shouldn't be updated via this endpoint
+        forbidden_fields = ['id', 'password_hash', 'created_at', 'subscription_plan', 'subscription_active']
+        for field in forbidden_fields:
+            update_data.pop(field, None)
+        
+        # Update user
+        result = await db.users.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Return updated user data
+        updated_user = await db.users.find_one({"id": user_id})
+        if 'password_hash' in updated_user:
+            del updated_user['password_hash']
+        
+        return updated_user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Profile update error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Profile update failed")
 @api_router.get("/user/{user_id}")
 async def get_user_data(user_id: str):
     user = await db.users.find_one({"id": user_id})
