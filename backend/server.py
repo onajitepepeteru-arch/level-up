@@ -314,6 +314,9 @@ async def get_user_scans(user_id: str, scan_type: Optional[str] = None):
         query["scan_type"] = scan_type
     
     scans = await db.scans.find(query).sort("timestamp", -1).to_list(50)
+    # Convert ObjectId to string for JSON serialization
+    for scan in scans:
+        scan['_id'] = str(scan['_id'])
     return scans
 
 @api_router.get("/user/{user_id}/chat-history")
