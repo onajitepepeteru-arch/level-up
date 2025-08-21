@@ -122,11 +122,14 @@ const FaceScanner = ({ onNavigate }) => {
         {!scanResult ? (
           <div className="text-sm text-gray-600">Run a face scan to get your routine.</div>
         ) : (
-          <div className="bg-blue-50 p-3 rounded">
-            <div className="text-sm text-gray-700">{scanResult.analysis.aiSuggestion}</div>
-            <div className="mt-2 flex items-center gap-2">
-              <Badge variant="secondary">Recommended</Badge>
-              <div className="text-sm text-gray-700">{scanResult.analysis.recommendedProduct}</div>
+          <div className="space-y-3 rounded-xl border bg-blue-50 p-3">
+            <div className="text-sm text-gray-700">Gentle cleansing, niacinamide, SPF 50+</div>
+            <div className="flex items-center justify-between bg-white rounded-lg p-3">
+              <div>
+                <div className="text-xs text-gray-500">Recommended Product</div>
+                <div className="text-sm font-medium text-gray-800">{scanResult.analysis.recommendedProduct || 'Youth-Glow Serum'}</div>
+              </div>
+              <Button size="sm" className="rounded-lg">View</Button>
             </div>
           </div>
         )}
