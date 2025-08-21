@@ -4,17 +4,18 @@ import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Avatar } from "./ui/avatar";
-import { Send, Heart, MessageCircle, Share, Trophy, Users, Plus, Search } from "lucide-react";
+import { Send, Heart, MessageCircle, Share, Trophy, Users, Plus, Search, Hash } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import ChatRoom from "./ChatRoom";
+import CreateChatRoom from "./CreateChatRoom";
 
 const SocialHub = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('feed');
+  const [currentView, setCurrentView] = useState('main'); // main, chat-room, create-room
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [chatRooms, setChatRooms] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -107,6 +108,8 @@ const SocialHub = ({ onNavigate }) => {
       id: '1',
       name: 'Fitness Beginners',
       description: 'Support group for fitness newcomers',
+      category: 'fitness',
+      type: 'public',
       members: 156,
       lastMessage: 'Just shared my first scan results!',
       lastActivity: new Date(Date.now() - 30 * 60 * 1000),
@@ -116,6 +119,8 @@ const SocialHub = ({ onNavigate }) => {
       id: '2',
       name: 'Nutrition Masters',
       description: 'Share recipes and nutrition tips',
+      category: 'nutrition',
+      type: 'public',
       members: 89,
       lastMessage: 'Great protein smoothie recipe here...',
       lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000),
@@ -125,10 +130,23 @@ const SocialHub = ({ onNavigate }) => {
       id: '3',
       name: 'Body Transformation',
       description: 'Track your body scan progress together',
+      category: 'fitness',
+      type: 'public',
       members: 203,
       lastMessage: 'Amazing progress this month everyone!',
       lastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000),
       isJoined: true
+    },
+    {
+      id: '4',
+      name: 'Skincare Squad',
+      description: 'Glowing skin tips and face scan discussions',
+      category: 'skincare',
+      type: 'public',
+      members: 67,
+      lastMessage: 'Try this new moisturizer routine!',
+      lastActivity: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      isJoined: false
     }
   ];
 
@@ -139,6 +157,161 @@ const SocialHub = ({ onNavigate }) => {
     { rank: 4, name: 'You', level: 1, xp: 50, streak: 1, avatar: null, isCurrentUser: true },
     { rank: 5, name: 'Tom Wilson', level: 5, xp: 1890, streak: 9, avatar: null }
   ];
+
+  const handleJoinRoom = async (roomId) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      
+      await fetch(`${backendUrl}/api/social/join-room`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, room_id: roomId })
+      });
+      
+      setChatRooms(prev => prev.map(room => 
+        room.id === roomId 
+          ? { ...room, isJoined: true, members: room.members + 1 }
+          : room
+      ));
+      
+      toast({ title: "Success", description: "Joined chat room successfully!" });
+    } catch (error) {
+      setChatRooms(prev => prev.map(room => 
+        room.id === roomId 
+          ? { ...room, isJoined: true, members: room.members + 1 }
+          : room
+      ));
+      toast({ title: "Success", description: "Joined chat room successfully!" });
+    }
+  };
+
+  const handleRoomClick = (room) => {
+    if (room.isJoined) {
+      setSelectedRoom(room);
+      setCurrentView('chat-room');
+    } else {
+      handleJoinRoom(room.id);
+    }
+  };
+
+  const handleCreateRoom = () => {
+    setCurrentView('create-room');
+  };
+
+  const handleRoomCreated = (newRoom) => {
+    setChatRooms(prev => [newRoom, ...prev]);
+    setSelectedRoom(newRoom);
+    setCurrentView('chat-room');
+  };
+
+  const handleBackToMain = () => {
+    setCurrentView('main');
+    setSelectedRoom(null);
+  };
+
+  // If in chat room view
+  if (currentView === 'chat-room' && selectedRoom) {
+    return <ChatRoom room={selectedRoom} onBack={handleBackToMain} onNavigate={onNavigate} />;
+  }
+
+  // If in create room view
+  if (currentView === 'create-room') {
+    return <CreateChatRoom onBack={handleBackToMain} onCreate={handleRoomCreated} />;
+  }
+
+  const renderChatRooms = () => (
+    <div className="space-y-4">
+      {/* Search and Create */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Input placeholder="Search chat rooms..." className="pl-10" />
+        </div>
+        <Button size="sm" onClick={handleCreateRoom} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+          <Plus size={16} className="mr-2" />
+          Create
+        </Button>
+      </div>
+
+      {/* Featured Rooms */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Featured Rooms</h3>
+        
+        {chatRooms.slice(0, 2).map((room) => (
+          <Card key={room.id} className="p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleRoomClick(room)}>
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex items-center gap-2">
+                <Hash size={16} className="text-gray-400" />
+                <h4 className="font-semibold">{room.name}</h4>
+                {room.type === 'private' && <Badge variant="outline" className="text-xs">Private</Badge>}
+              </div>
+              <Badge variant="outline" className="text-xs">
+                <Users size={12} className="mr-1" />
+                {room.members}
+              </Badge>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-2">{room.description}</p>
+            
+            <div className="flex justify-between items-center">
+              <div className="text-xs text-gray-500">
+                <p className="truncate max-w-48">{room.lastMessage}</p>
+                <p>{formatTimeAgo(room.lastActivity)}</p>
+              </div>
+              
+              {room.isJoined ? (
+                <Badge className="bg-green-500">
+                  <MessageCircle size={12} className="mr-1" />
+                  Joined
+                </Badge>
+              ) : (
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); handleJoinRoom(room.id); }}>
+                  Join
+                </Button>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* All Rooms */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">All Rooms</h3>
+        
+        {chatRooms.slice(2).map((room) => (
+          <Card key={room.id} className="p-3 mb-2 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleRoomClick(room)}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="text-lg">
+                  {room.category === 'fitness' ? '💪' : 
+                   room.category === 'nutrition' ? '🍎' : 
+                   room.category === 'skincare' ? '✨' : '💬'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-sm truncate">{room.name}</h4>
+                    <Badge variant="secondary" className="text-xs">{room.members}</Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 truncate">{room.description}</p>
+                </div>
+              </div>
+              
+              {room.isJoined ? (
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                  Joined
+                </Badge>
+              ) : (
+                <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleJoinRoom(room.id); }}>
+                  Join
+                </Button>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 
   const handleCreatePost = async () => {
     if (!newPost.trim()) return;
