@@ -148,7 +148,9 @@ const SocialHub = ({ onNavigate }) => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       const userId = localStorage.getItem('userId');
-      await fetch(`${backendUrl}/api/chat-room/message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, room_id: roomToShare, message: 'shared a post', type: 'shared_post', meta: { post_id: shareForPost } }) });
+      const post = posts.find(p => p.id === shareForPost);
+      const preview = post ? { content: post.content, media: post.media || [] } : undefined;
+      await fetch(`${backendUrl}/api/chat-room/message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, room_id: roomToShare, message: 'shared a post', type: 'shared_post', meta: { post_id: shareForPost, preview } }) });
       toast({ title: 'Shared to room' });
       closeShareModal();
     } catch {
@@ -319,14 +321,13 @@ const SocialHub = ({ onNavigate }) => {
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <Button variant="ghost" size="sm" onClick={() => handleLikePost(post.id)} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}><Heart size={16} fill={post.isLiked ? 'currentColor' : 'none'} />{post.likes}</Button>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => handleCommentPost(post.id)}><MessageCircle size={16} />{post.comments}</Button>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => { openShareModal(post.id); }}><Share size={16} />Share</Button>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => { setShareForPost(post.id); }}><Share size={16} />Share</Button>
               </div>
             </div>
           </div>
         </Card>
       ))}
 
-      {/* Share Modal */}
       {shareForPost && (
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50">
           <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-4 shadow-lg">
@@ -341,7 +342,7 @@ const SocialHub = ({ onNavigate }) => {
                 </select>
                 <div className="flex gap-2 mt-3">
                   <Button onClick={shareToRoom} disabled={!roomToShare}>Share</Button>
-                  <Button variant="outline" onClick={closeShareModal}>Cancel</Button>
+                  <Button variant="outline" onClick={() => { setShareForPost(null); setRoomToShare(null); }}>Cancel</Button>
                 </div>
               </div>
             </div>
