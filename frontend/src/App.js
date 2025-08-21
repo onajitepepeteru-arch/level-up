@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthScreen from "./components/AuthScreen";
@@ -11,6 +11,8 @@ import SocialHub from "./components/SocialHub";
 import Settings from "./components/Settings";
 import Profile from "./components/Profile";
 import AIChat from "./components/AIChat";
+import ActivityCalendar from "./components/ActivityCalendar";
+import NotificationsScreen from "./components/NotificationsScreen";
 import BottomNavigation from "./components/BottomNavigation";
 import { Toaster } from "./components/ui/toaster";
 
@@ -19,19 +21,66 @@ function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = () => {
+    const storedUser = localStorage.getItem('user');
+    const userId = localStorage.getItem('userId');
+    
+    if (storedUser && userId) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserData(user);
+        setIsAuthenticated(true);
+        setHasCompletedOnboarding(user.onboarding_completed || false);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('userId');
+      }
+    }
+  };
 
   const handleLogin = (isExistingUser = true) => {
     setIsAuthenticated(true);
     // If it's an existing user (login), skip onboarding
     if (isExistingUser) {
-      setHasCompletedOnboarding(true);
+      // Check if user has completed onboarding from stored data
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          setHasCompletedOnboarding(user.onboarding_completed || true);
+        } catch (error) {
+          setHasCompletedOnboarding(true); // Default to true for login
+        }
+      } else {
+        setHasCompletedOnboarding(true);
+      }
     }
     // If it's a new user (signup), they'll go through onboarding
   };
 
-  const handleOnboardingComplete = (userData) => {
-    console.log("Onboarding completed with data:", userData);
+  const handleOnboardingComplete = (onboardingData) => {
+    console.log("Onboarding completed with data:", onboardingData);
     setHasCompletedOnboarding(true);
+    
+    // Update stored user data
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const updatedUser = { ...user, onboarding_completed: true, ...onboardingData };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUserData(updatedUser);
+      } catch (error) {
+        console.error('Error updating user data:', error);
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -39,6 +88,10 @@ function App() {
     setHasCompletedOnboarding(false);
     setCurrentTab('dashboard');
     setCurrentScreen('main');
+    setUserData(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
   };
 
   const handleNavigate = (screen) => {
@@ -71,6 +124,10 @@ function App() {
         return <Profile onBack={() => setCurrentScreen('main')} />;
       case 'ai-chat':
         return <AIChat onBack={() => setCurrentScreen('main')} />;
+      case 'activity':
+        return <ActivityCalendar onBack={() => setCurrentScreen('main')} />;
+      case 'notifications':
+        return <NotificationsScreen onBack={() => setCurrentScreen('main')} />;
       case 'main':
       default:
         switch(currentTab) {
@@ -96,7 +153,7 @@ function App() {
         <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
           {/* Mobile Status Bar */}
           <div className="flex justify-between items-center px-4 py-2 bg-white text-black text-sm font-medium">
-            <span>15:06</span>
+            <span>{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             <div className="flex items-center gap-1">
               <div className="flex gap-1">
                 <div className="w-1 h-3 bg-black rounded-full"></div>
