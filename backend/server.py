@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile
+from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Depends
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -10,9 +10,21 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime
-from emergentintegrations.llm.chat import LlmChat, UserMessage
-import json
+import hashlib
+import jwt
+import bcrypt
+import base64
+from PIL import Image
+import io
+import asyncio
 
+# Content moderation imports
+try:
+    import cv2
+    import numpy as np
+    OPENCV_AVAILABLE = True
+except ImportError:
+    OPENCV_AVAILABLE = False
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -22,20 +34,28 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Create the main app
+app = FastAPI(title="Leveling-Up API", description="Fitness App Backend", version="1.0.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Initialize AI Chat
+# Initialize environment variables
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+JWT_SECRET = os.environ.get('JWT_SECRET')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Define Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     email: str
+    password_hash: Optional[str] = None
     age: Optional[int] = None
     gender: Optional[str] = None
     goals: Optional[List[str]] = []
@@ -46,10 +66,22 @@ class User(BaseModel):
     xp: int = 0
     avatar_url: Optional[str] = None
     subscription_plan: str = "Free"
+    subscription_active: bool = False
+    subscription_end_date: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_login: Optional[datetime] = None
+    is_verified: bool = False
+    onboarding_completed: bool = False
+    total_scans: int = 0
+    streak_days: int = 0
+    last_activity: Optional[datetime] = None
 
-class UserCreate(BaseModel):
+class UserRegistration(BaseModel):
     name: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
     email: str
     password: str
 
@@ -58,18 +90,24 @@ class OnboardingData(BaseModel):
     age: int
     gender: str
     goals: List[str]
-    body_type: str
-    activity_level: str
-    health_conditions: List[str]
+    bodyType: str
+    activityLevel: str
+    healthConditions: List[str] = []
 
 class ScanResult(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    scan_type: str  # "body", "face", "food"
-    image_url: Optional[str] = None
-    analysis_result: dict
+    scan_type: str  # 'body', 'face', 'food'
+    file_path: Optional[str] = None
+    analysis_result: dict = {}
     xp_earned: int = 0
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+    is_approved: bool = True  # For content moderation
+
+class AIChatRequest(BaseModel):
+    user_id: str
+    session_id: str
+    message: str
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -79,61 +117,206 @@ class ChatMessage(BaseModel):
     response: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-class ChatRequest(BaseModel):
+class NotificationRequest(BaseModel):
     user_id: str
-    session_id: str
+    title: str
     message: str
+    type: str = "info"  # info, warning, success, error
 
-# Authentication endpoints
-@api_router.post("/auth/register", response_model=User)
-async def register_user(user_data: UserCreate):
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists")
-    
-    user = User(
-        name=user_data.name,
-        email=user_data.email,
-        avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-    )
-    await db.users.insert_one(user.dict())
-    return user
+class Notification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    title: str
+    message: str
+    type: str
+    read: bool = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+# Utility Functions
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def create_jwt_token(user_id: str) -> str:
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.utcnow().timestamp() + 86400  # 24 hours
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+async def content_moderation_check(image_data: bytes) -> bool:
+    """Basic content moderation using computer vision"""
+    try:
+        if not OPENCV_AVAILABLE:
+            logger.warning("OpenCV not available, skipping content moderation")
+            return True
+            
+        # Convert bytes to image
+        image = Image.open(io.BytesIO(image_data))
+        image_np = np.array(image)
+        
+        # Convert to RGB if needed
+        if len(image_np.shape) == 3 and image_np.shape[2] == 3:
+            image_cv = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+        else:
+            image_cv = image_np
+        
+        # Basic skin tone detection (simple approach)
+        # This is a basic implementation - in production, use proper AI services
+        hsv = cv2.cvtColor(image_cv, cv2.COLOR_BGR2HSV)
+        
+        # Define skin color range in HSV
+        lower_skin = np.array([0, 20, 70], dtype=np.uint8)
+        upper_skin = np.array([20, 255, 255], dtype=np.uint8)
+        
+        # Create mask for skin detection
+        skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
+        skin_pixels = cv2.countNonZero(skin_mask)
+        total_pixels = image_cv.shape[0] * image_cv.shape[1]
+        
+        # If more than 30% is detected as skin, flag for review
+        skin_ratio = skin_pixels / total_pixels
+        
+        if skin_ratio > 0.3:
+            logger.warning(f"High skin ratio detected: {skin_ratio:.2f}")
+            return False  # Needs manual review
+        
+        return True  # Approved
+        
+    except Exception as e:
+        logger.error(f"Content moderation error: {str(e)}")
+        return True  # Default to approved if error occurs
+
+# API Endpoints
+
+# Authentication Endpoints
+@api_router.post("/auth/register")
+async def register_user(user_data: UserRegistration):
+    try:
+        # Check if user already exists
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Create new user with hashed password
+        user = User(
+            name=user_data.name,
+            email=user_data.email,
+            password_hash=hash_password(user_data.password),
+            level=1,
+            xp=0,
+            subscription_plan="Free"
+        )
+        
+        # Insert user into database
+        await db.users.insert_one(user.dict())
+        
+        # Create JWT token
+        token = create_jwt_token(user.id)
+        
+        # Remove password hash from response
+        user_dict = user.dict()
+        del user_dict['password_hash']
+        
+        return {
+            "message": "User registered successfully",
+            "user": user_dict,
+            "token": token
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 @api_router.post("/auth/login")
-async def login_user(email: str, password: str):
-    user = await db.users.find_one({"email": email})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {"message": "Login successful", "user": User(**user)}
+async def login_user(user_data: UserLogin):
+    try:
+        # Find user by email
+        user = await db.users.find_one({"email": user_data.email})
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Verify password
+        if not verify_password(user_data.password, user['password_hash']):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Update last login
+        await db.users.update_one(
+            {"id": user['id']},
+            {"$set": {"last_login": datetime.utcnow()}}
+        )
+        
+        # Create JWT token
+        token = create_jwt_token(user['id'])
+        
+        # Remove password hash from response
+        del user['password_hash']
+        
+        return {
+            "message": "Login successful",
+            "user": user,
+            "token": token
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
 
+# Onboarding Endpoint
 @api_router.post("/onboarding")
-async def complete_onboarding(data: OnboardingData):
-    # Update user with onboarding data
-    update_data = {
-        "age": data.age,
-        "gender": data.gender,
-        "goals": data.goals,
-        "body_type": data.body_type,
-        "activity_level": data.activity_level,
-        "health_conditions": data.health_conditions,
-        "xp": 50  # Bonus XP for completing onboarding
-    }
-    
-    result = await db.users.update_one(
-        {"id": data.user_id},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {"message": "Onboarding completed", "xp_earned": 50}
+async def complete_onboarding(onboarding_data: OnboardingData):
+    try:
+        user_id = onboarding_data.user_id
+        
+        # Update user with onboarding data
+        update_data = {
+            "age": onboarding_data.age,
+            "gender": onboarding_data.gender,
+            "goals": onboarding_data.goals,
+            "body_type": onboarding_data.bodyType,
+            "activity_level": onboarding_data.activityLevel,
+            "health_conditions": onboarding_data.healthConditions,
+            "onboarding_completed": True,
+            "xp": 50,  # Initial XP for completing onboarding
+        }
+        
+        result = await db.users.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Create notification
+        notification = Notification(
+            user_id=user_id,
+            title="Welcome to Leveling-Up!",
+            message="Congratulations! You've completed your profile setup and earned 50 XP!",
+            type="success"
+        )
+        await db.notifications.insert_one(notification.dict())
+        
+        return {
+            "message": "Onboarding completed successfully",
+            "xp_earned": 50
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Onboarding error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Onboarding failed")
 
-# AI Chat endpoints
+# AI Chat Endpoint
 @api_router.post("/chat")
-async def chat_with_ai(chat_request: ChatRequest):
+async def chat_with_ai(chat_request: AIChatRequest):
     try:
         # Get user data for context
         user = await db.users.find_one({"id": chat_request.user_id})
@@ -145,26 +328,23 @@ async def chat_with_ai(chat_request: ChatRequest):
             {"user_id": chat_request.user_id}
         ).sort("timestamp", -1).limit(5).to_list(5)
         
-        # Create AI system message with user context
-        system_message = f"""You are a professional fitness and wellness coach for the LevelUP app. 
-        
+        # Build context message
+        system_message = f"""You are a professional AI fitness coach for Leveling-Up. 
 User Profile:
 - Name: {user.get('name', 'User')}
 - Level: {user.get('level', 1)}
 - XP: {user.get('xp', 0)}
 - Goals: {', '.join(user.get('goals', []))}
-- Body Type: {user.get('body_type', 'Unknown')}
-- Activity Level: {user.get('activity_level', 'Unknown')}
-
-Recent Activity:
-- Total scans completed: {len(recent_scans)}
-- Last scan: {recent_scans[0]['scan_type'] if recent_scans else 'None'}
+- Activity Level: {user.get('activity_level', 'Not specified')}
+- Recent activity: {len(recent_scans)} scans completed
 
 Provide personalized, actionable advice. Be encouraging and motivational. 
-Reference their level, goals, and scan history when relevant. Keep responses under 200 words."""
+Keep responses under 200 words and focus on their goals and current level."""
 
-        # Initialize AI chat with error handling
         try:
+            # Initialize AI chat with error handling
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            
             chat = LlmChat(
                 api_key=EMERGENT_LLM_KEY,
                 session_id=chat_request.session_id,
@@ -176,10 +356,10 @@ Reference their level, goals, and scan history when relevant. Keep responses und
             ai_response = await chat.send_message(user_message)
             
         except Exception as ai_error:
-            logging.error(f"AI integration error: {str(ai_error)}")
+            logger.error(f"AI integration error: {str(ai_error)}")
             # Fallback response when AI is unavailable
-            ai_response = f"Hi! I'm your LevelUP fitness coach. I'm currently experiencing some technical issues, but I'll be back soon! In the meantime, here's some general advice: {chat_request.message}"
-        
+            ai_response = f"Hello! I'm your Leveling-Up fitness coach. I'm currently experiencing some technical issues, but I'm here to help! Based on your goals ({', '.join(user.get('goals', ['general fitness']))}), I'd recommend starting with consistent daily activity. What specific area would you like to focus on today?"
+
         # Save chat to database
         chat_message = ChatMessage(
             user_id=chat_request.user_id,
@@ -191,23 +371,49 @@ Reference their level, goals, and scan history when relevant. Keep responses und
         
         return {"response": ai_response}
     
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Chat error: {str(e)}")
+        logger.error(f"Chat error: {str(e)}")
         raise HTTPException(status_code=500, detail="AI chat temporarily unavailable")
 
-# Scanning endpoints
+# Scanning endpoints with content moderation
 @api_router.post("/scan/body")
 async def analyze_body_scan(user_id: str, file: UploadFile = File(...)):
     try:
-        # Mock analysis for now - will be replaced with actual API
+        # Read and validate file
+        file_data = await file.read()
+        if len(file_data) == 0:
+            raise HTTPException(status_code=400, detail="Empty file")
+        
+        # Content moderation check
+        is_approved = await content_moderation_check(file_data)
+        
+        if not is_approved:
+            # Save scan but mark as pending review
+            scan_result = ScanResult(
+                user_id=user_id,
+                scan_type="body",
+                analysis_result={"status": "pending_review", "message": "Image under review for compliance"},
+                xp_earned=0,
+                is_approved=False
+            )
+            await db.scans.insert_one(scan_result.dict())
+            
+            return {
+                "message": "Image submitted for review",
+                "status": "pending_review",
+                "xp_earned": 0
+            }
+        
+        # For now, return placeholder analysis (will be replaced with actual API)
         mock_analysis = {
-            "body_type": "Mesomorph",
-            "muscle_mass": "38%",
-            "posture_score": 75,
+            "status": "completed",
+            "message": "Body scan completed! Upload a photo to get detailed analysis.",
             "recommendations": [
-                "Focus on compound movements",
-                "Increase protein intake to 1.2g/kg",
-                "Maintain current workout frequency"
+                "Continue building your routine",
+                "Focus on consistent activity",
+                "Track your progress regularly"
             ]
         }
         
@@ -221,31 +427,62 @@ async def analyze_body_scan(user_id: str, file: UploadFile = File(...)):
         # Save scan result
         await db.scans.insert_one(scan_result.dict())
         
-        # Update user XP
+        # Update user XP and stats
         await db.users.update_one(
             {"id": user_id},
-            {"$inc": {"xp": 8}}
+            {
+                "$inc": {"xp": 8, "total_scans": 1},
+                "$set": {"last_activity": datetime.utcnow()}
+            }
         )
         
-        return {"analysis": mock_analysis, "xp_earned": 8}
-    
+        return {
+            "message": "Body scan completed successfully",
+            "analysis": mock_analysis,
+            "xp_earned": 8
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Body scan error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Body scan analysis failed")
+        logger.error(f"Body scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Body scan failed")
 
 @api_router.post("/scan/face")
 async def analyze_face_scan(user_id: str, file: UploadFile = File(...)):
     try:
-        # Mock analysis for now - will be replaced with GlamAR API
+        # Read and validate file
+        file_data = await file.read()
+        if len(file_data) == 0:
+            raise HTTPException(status_code=400, detail="Empty file")
+        
+        # Content moderation check
+        is_approved = await content_moderation_check(file_data)
+        
+        if not is_approved:
+            scan_result = ScanResult(
+                user_id=user_id,
+                scan_type="face",
+                analysis_result={"status": "pending_review", "message": "Image under review for compliance"},
+                xp_earned=0,
+                is_approved=False
+            )
+            await db.scans.insert_one(scan_result.dict())
+            
+            return {
+                "message": "Image submitted for review",
+                "status": "pending_review",
+                "xp_earned": 0
+            }
+        
+        # Placeholder analysis
         mock_analysis = {
-            "skin_type": "Combination",
-            "acne_score": 15,
-            "hydration_level": 65,
-            "wrinkles": "Minimal",
+            "status": "completed",
+            "message": "Face scan completed! Upload a clear selfie to get detailed skin analysis.",
             "recommendations": [
-                "Use niacinamide serum for acne",
-                "Apply SPF 50+ daily",
-                "Increase water intake"
+                "Maintain good skincare routine",
+                "Stay hydrated",
+                "Get adequate sleep"
             ]
         }
         
@@ -258,30 +495,52 @@ async def analyze_face_scan(user_id: str, file: UploadFile = File(...)):
         
         await db.scans.insert_one(scan_result.dict())
         
-        # Update user XP
         await db.users.update_one(
             {"id": user_id},
-            {"$inc": {"xp": 6}}
+            {
+                "$inc": {"xp": 6, "total_scans": 1},
+                "$set": {"last_activity": datetime.utcnow()}
+            }
         )
         
-        return {"analysis": mock_analysis, "xp_earned": 6}
-    
+        return {
+            "message": "Face scan completed successfully",
+            "analysis": mock_analysis,
+            "xp_earned": 6
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Face scan error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Face scan analysis failed")
+        logger.error(f"Face scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Face scan failed")
 
 @api_router.post("/scan/food")
 async def analyze_food_scan(user_id: str, file: UploadFile = File(...)):
     try:
-        # Mock analysis for now - will be replaced with LogMeal API
+        # Read and validate file
+        file_data = await file.read()
+        if len(file_data) == 0:
+            raise HTTPException(status_code=400, detail="Empty file")
+        
+        # Basic content validation for food images
+        is_approved = True  # Food images generally don't need strict content moderation
+        
+        # Placeholder analysis - will be replaced with actual nutrition API
         mock_analysis = {
-            "food_name": "Grilled Chicken Salad",
-            "calories": 320,
-            "protein": 35,
-            "carbs": 12,
-            "fat": 15,
-            "fiber": 8,
-            "nutrients": ["Vitamin A", "Vitamin C", "Iron"]
+            "status": "completed",
+            "message": "Food scan completed! Upload a photo of your meal to get detailed nutrition information.",
+            "nutrition": {
+                "calories": 0,
+                "protein": "0g",
+                "carbs": "0g", 
+                "fat": "0g"
+            },
+            "recommendations": [
+                "Start tracking your meals",
+                "Focus on balanced nutrition",
+                "Include variety in your diet"
+            ]
         }
         
         scan_result = ScanResult(
@@ -293,29 +552,42 @@ async def analyze_food_scan(user_id: str, file: UploadFile = File(...)):
         
         await db.scans.insert_one(scan_result.dict())
         
-        # Update user XP
         await db.users.update_one(
             {"id": user_id},
-            {"$inc": {"xp": 5}}
+            {
+                "$inc": {"xp": 5, "total_scans": 1},
+                "$set": {"last_activity": datetime.utcnow()}
+            }
         )
         
-        return {"analysis": mock_analysis, "xp_earned": 5}
-    
+        return {
+            "message": "Food scan completed successfully",
+            "analysis": mock_analysis,
+            "xp_earned": 5
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Food scan error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Food scan analysis failed")
+        logger.error(f"Food scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Food scan failed")
 
 # User data endpoints
 @api_router.get("/user/{user_id}")
-async def get_user(user_id: str):
+async def get_user_data(user_id: str):
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return User(**user)
+    
+    # Remove sensitive data
+    if 'password_hash' in user:
+        del user['password_hash']
+    
+    return user
 
 @api_router.get("/user/{user_id}/scans")
 async def get_user_scans(user_id: str, scan_type: Optional[str] = None):
-    query = {"user_id": user_id}
+    query = {"user_id": user_id, "is_approved": True}  # Only return approved scans
     if scan_type:
         query["scan_type"] = scan_type
     
@@ -335,33 +607,96 @@ async def get_chat_history(user_id: str, session_id: str):
         message['_id'] = str(message['_id'])
     return messages
 
+# Notifications
+@api_router.get("/user/{user_id}/notifications")
+async def get_notifications(user_id: str):
+    notifications = await db.notifications.find(
+        {"user_id": user_id}
+    ).sort("timestamp", -1).to_list(50)
+    
+    for notification in notifications:
+        notification['_id'] = str(notification['_id'])
+    
+    return notifications
+
+@api_router.post("/notifications")
+async def send_notification(notification_data: NotificationRequest):
+    notification = Notification(**notification_data.dict())
+    await db.notifications.insert_one(notification.dict())
+    return {"message": "Notification sent successfully"}
+
+@api_router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str):
+    result = await db.notifications.update_one(
+        {"id": notification_id},
+        {"$set": {"read": True}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification marked as read"}
+
+# Admin endpoints
+@api_router.get("/admin/users")
+async def get_all_users(admin_email: str, admin_password: str):
+    # Simple admin authentication
+    if admin_email != ADMIN_EMAIL or admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    users = await db.users.find({}, {"password_hash": 0}).to_list(1000)
+    for user in users:
+        user['_id'] = str(user['_id'])
+    
+    return {
+        "total_users": len(users),
+        "users": users
+    }
+
+@api_router.get("/admin/pending-scans")
+async def get_pending_scans(admin_email: str, admin_password: str):
+    if admin_email != ADMIN_EMAIL or admin_password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    pending_scans = await db.scans.find({"is_approved": False}).to_list(100)
+    for scan in pending_scans:
+        scan['_id'] = str(scan['_id'])
+    
+    return {"pending_scans": pending_scans}
+
 # Health check
 @api_router.get("/")
 async def root():
-    return {"message": "LevelUP API is running"}
+    return {"message": "Leveling-Up API is running", "version": "1.0.0"}
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow()}
+    try:
+        # Test database connection
+        await db.users.count_documents({})
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "timestamp": datetime.utcnow(),
+        "version": "1.0.0"
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
     allow_credentials=True,
-    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
