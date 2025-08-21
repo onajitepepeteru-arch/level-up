@@ -18,6 +18,7 @@ const SocialHub = ({ onNavigate }) => {
   const [chatRooms, setChatRooms] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
