@@ -99,7 +99,7 @@ class BackendTester:
         
         test_user_data = {
             "name": "Alex Johnson",
-            "email": f"alex.test.{self.test_user_id}@levelup.com",
+            "email": self.test_email,
             "password": "securepass123"
         }
         
