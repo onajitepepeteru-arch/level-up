@@ -200,6 +200,9 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ FIXED: All User Data Retrieval APIs now working correctly. GET /api/user/{user_id}/scans returns JSON serializable data with proper timestamp strings. GET /api/user/{user_id}/chat-history?session_id=abc works with no serialization errors. ObjectId serialization issue resolved."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ AUTH REGRESSION TEST PASSED: GET /api/user/{user_id} returns user JSON serializable ✅. Fixed missing route handler during testing. User data properly serialized with UUID strings, no ObjectId leaks, no sensitive data exposure. All user data retrieval endpoints working perfectly."
 
   - task: "Notifications API"
     implemented: true
