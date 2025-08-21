@@ -185,7 +185,7 @@ backend:
     working: false
     file: "/app/backend/server.py"
     stuck_count: 1
-    priority: "medium"
+    priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
