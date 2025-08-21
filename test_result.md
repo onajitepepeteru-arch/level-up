@@ -311,6 +311,9 @@ backend:
         - working: "NA"
         - agent: "testing"
         - comment: "✅ Social Media Image/Video Posts correctly NOT IMPLEMENTED as expected. POST /api/social/post with image/video files returns 422 Unprocessable Entity, properly rejecting media uploads. Text-only posts work perfectly. This is the expected behavior - image/video posting is not implemented, which matches the review requirement to verify this feature is not available."
+        - working: "NA"
+        - agent: "testing"
+        - comment: "✅ AUTH REGRESSION SANITY CHECK PASSED: Social feed endpoints still working perfectly after auth changes. POST /api/social/post creates posts successfully ✅. GET /api/social/feed retrieves posts with proper serialization ✅. All social functionality maintained post-auth updates."
 
   - task: "Media Upload/Retrieval Backend Support"
     implemented: true
