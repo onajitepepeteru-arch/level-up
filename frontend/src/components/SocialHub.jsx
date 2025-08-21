@@ -489,12 +489,12 @@ const SocialHub = ({ onNavigate }) => {
                   {post.likes}
                 </Button>
                 
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => handleCommentPost(post.id)}>
                   <MessageCircle size={16} />
                   {post.comments}
                 </Button>
                 
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => handleSharePost(post.id)}>
                   <Share size={16} />
                   Share
                 </Button>
