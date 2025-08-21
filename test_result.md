@@ -134,6 +134,9 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ Authentication APIs working correctly. Registration endpoint (/api/auth/register) creates users successfully. Login endpoint (/api/auth/login) authenticates users with query parameters. Users stored in MongoDB with proper UUID structure."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ AUTH REGRESSION TEST PASSED: POST /api/auth/register creates user with UUID string ID and token ✅. POST /api/auth/login with same email returns user.id (UUID string) and token with no ObjectId leaks ✅. All authentication endpoints working perfectly with proper JSON serialization."
 
   - task: "Onboarding API"
     implemented: true
