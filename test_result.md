@@ -360,15 +360,18 @@ frontend:
         - comment: "❌ CRITICAL SESSION ISSUE: Cannot complete media preview testing due to authentication session not persisting between test runs. App keeps resetting to login screen, preventing access to Social Hub and scanner functionality. This appears to be the 'login regression' mentioned in review request. Auth registration works correctly with no 'string errors', but session management is broken."
   - task: "Share Modal & Share-to-Room"
     implemented: true
-    working: NA
+    working: "NA"
     file: "/app/frontend/src/components/SocialHub.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Added Share modal with copy link and share to room; requests UI validation."
+        - working: "NA"
+        - agent: "testing"
+        - comment: "⚠️ CANNOT TEST: Unable to test Share Modal & Share-to-Room functionality due to authentication session persistence issue. App resets to login screen preventing access to Social Hub features. Need to fix session management before testing this feature."
   - task: "Chat Advanced Settings & Invite"
     implemented: true
     working: NA
