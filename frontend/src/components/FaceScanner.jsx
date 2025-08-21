@@ -1,18 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
-import { Camera, Upload, Sparkles, History, AlertTriangle, CheckCircle } from "lucide-react";
+import { Camera, Upload, Sparkles, History, AlertTriangle, CheckCircle, RotateCcw } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { mockSkinAnalysis, mockScanHistory } from "../mock";
 
 const FaceScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [scanResult, setScanResult] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const { toast } = useToast();
 
-  const handleFaceSelfie = () => {
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image size must be less than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleScan = async () => {
+    if (!selectedImage) {
+      toast({
+        title: "No Image Selected",
+        description: "Please select a face image to scan first",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsScanning(true);
     setScanProgress(0);
     
@@ -21,6 +63,11 @@ const FaceScanner = () => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsScanning(false);
+          setScanResult({
+            message: "Face scan completed successfully!",
+            analysis: mockSkinAnalysis,
+            xp_earned: 6
+          });
           toast({
             title: "Face Analysis Complete!",
             description: "Your skin analysis is ready. +6 XP earned!"
@@ -32,11 +79,23 @@ const FaceScanner = () => {
     }, 250);
   };
 
+  const handleFaceSelfie = () => {
+    // Trigger file input for camera/photo selection
+    fileInputRef.current?.click();
+  };
+
   const handleUploadPhoto = () => {
-    toast({
-      title: "Upload Feature",
-      description: "Photo upload will be implemented with backend integration!"
-    });
+    fileInputRef.current?.click();
+  };
+
+  const resetScan = () => {
+    setScanResult(null);
+    setSelectedImage(null);
+    setImagePreview(null);
+    setScanProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
