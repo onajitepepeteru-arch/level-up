@@ -128,7 +128,7 @@ class BackendTester:
         print("\n🔐 Testing User Login...")
         
         try:
-            # Note: The login endpoint expects form parameters, not JSON
+            # Note: The login endpoint expects query parameters
             login_data = {
                 "email": f"alex.test.{self.test_user_id}@levelup.com",
                 "password": "securepass123"
