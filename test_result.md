@@ -574,11 +574,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Users Search API"
-    - "Chat Rooms System"
-    - "Social Media Image/Video Posts"
+    - "Media Preview (Feed & Scanners)"
+    - "Authentication Session Management"
+    - "Share Modal & Share-to-Room"
   stuck_tasks:
     - "AI Chat Integration"
+    - "Media Preview (Feed & Scanners)"
   test_all: false
   test_priority: "high_first"
 
