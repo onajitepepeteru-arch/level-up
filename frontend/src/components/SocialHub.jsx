@@ -83,7 +83,7 @@ const SocialHub = ({ onNavigate }) => {
       console.error('Error loading social data:', error);
       // Load mock data as fallback
       if (activeTab === 'feed') setPosts(getMockPosts());
-      else if (activeTab === 'chat') setChatRooms(getMockChatRooms());
+      else if (activeTab === 'chat') setChatRooms([]);
       else if (activeTab === 'leaderboard') setLeaderboard(getMockLeaderboard());
     } finally {
       setIsLoading(false);
