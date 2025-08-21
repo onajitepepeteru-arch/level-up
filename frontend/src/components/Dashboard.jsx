@@ -226,9 +226,6 @@ const Dashboard = ({ onNavigate }) => {
               <Target size={20} />
               Daily Missions
             </h3>
-            <Button variant="outline" size="sm">
-              Customize
-            </Button>
           </div>
           
           <div className="space-y-3">
