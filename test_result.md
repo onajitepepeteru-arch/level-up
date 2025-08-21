@@ -340,7 +340,7 @@ frontend:
     file: "/app/frontend/src/components/SocialHub.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "testing"
