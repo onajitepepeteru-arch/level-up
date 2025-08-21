@@ -413,20 +413,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication Flow"
-    - "Onboarding Flow"
-    - "Dashboard Navigation"
-    - "AI Chat Functionality"
-    - "Body Scanner"
-    - "Face Scanner"
-    - "Food Scanner"
-    - "Social Hub"
-    - "Settings & Profile"
-    - "Profile Management"
-    - "Bottom Navigation"
-    - "Mobile Responsiveness"
-  stuck_tasks: []
-  test_all: true
+    - "AI Chat Integration"
+    - "User Data Retrieval APIs"
+  stuck_tasks:
+    - "AI Chat Integration"
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
@@ -438,3 +429,5 @@ agent_communication:
     - message: "CRITICAL BUGS REPORTED BY USER: User reported non-functional buttons, onboarding questions appearing incorrectly for login, persistent logout button, and non-working AI agent. Investigating and debugging these issues."
     - agent: "main"
     - message: "✅ MAJOR BUGS FIXED! Root cause was incorrect routing logic in App.js. Both login and signup were forcing users through onboarding flow. Fixed by modifying handleLogin() to accept isExistingUser parameter: LOGIN (existing users) now skip onboarding and go directly to dashboard ✅, SIGNUP (new users) still go through onboarding ✅, AI Chat functionality confirmed working ✅, Button functionality restored ✅. All reported issues resolved."
+    - agent: "testing"
+    - message: "🔍 BACKEND TESTING COMPLETED: Comprehensive backend API testing performed. Results: 11/13 tests passed (84.6% success rate). ✅ WORKING: FastAPI server, authentication APIs, onboarding, scanning APIs, MongoDB connection, CORS. ❌ FAILING: AI Chat Integration (OpenAI connection error in emergentintegrations library), User Data Retrieval (ObjectId serialization issue). Critical issue identified: AI chat fails due to network/API connectivity problems with OpenAI service."
