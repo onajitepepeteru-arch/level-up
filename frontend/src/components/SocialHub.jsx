@@ -196,22 +196,24 @@ const SocialHub = ({ onNavigate }) => {
   if (currentView === 'chat-room' && selectedRoom) return <ChatRoom room={selectedRoom} onBack={handleBackToMain} onNavigate={onNavigate} />;
   if (currentView === 'create-room') return <CreateChatRoom onBack={handleBackToMain} onCreate={handleRoomCreated} />;
 
-  const renderChatRooms = () => (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <Input placeholder="Search chat rooms..." className="pl-10" />
+  const renderChatRooms = () => {
+    if (!chatRooms || chatRooms.length === 0) {
+      return (
+        <div className="space-y-4">
+          <Card className="p-6 text-center">
+            <div className="text-gray-800 font-semibold mb-1">No chat rooms yet</div>
+            <div className="text-sm text-gray-500 mb-4">Create a room and invite members to start chatting.</div>
+            <Button onClick={handleCreateRoom} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Create Room</Button>
+          </Card>
         </div>
-        <Button size="sm" onClick={handleCreateRoom} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-          <Plus size={16} className="mr-2" /> Create
-        </Button>
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Featured Rooms</h3>
-        {(chatRooms || []).slice(0, 2).map(room => (
-          <Card key={room.id} className="p-4 mb-3 hover:shadow-md cursor-pointer" onClick={() => handleRoomClick(room)}>
-            <div className="flex justify-between items-start mb-2">
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {(chatRooms || []).map((room) => (
+          <Card key={room.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleRoomClick(room)}>
+            <div className="flex justify-between items-start mb-1">
               <div className="flex items-center gap-2">
                 <Hash size={16} className="text-gray-400" />
                 <h4 className="font-semibold">{room.name}</h4>
@@ -219,33 +221,20 @@ const SocialHub = ({ onNavigate }) => {
               </div>
               <Badge variant="outline" className="text-xs"><Users size={12} className="mr-1" />{room.members}</Badge>
             </div>
-            <p className="text-sm text-gray-600 mb-2">{room.description}</p>
+            {room.description && <p className="text-sm text-gray-600 mb-2 truncate">{room.description}</p>}
             <div className="flex justify-between items-center">
-              <div className="text-xs text-gray-500"><p className="truncate max-w-48">{room.lastMessage}</p></div>
-              {room.isJoined ? (<Badge className="bg-green-500">Joined</Badge>) : (<Button size="sm" onClick={(e) => { e.stopPropagation(); handleJoinRoom(room.id); }}>Join</Button>)}
+              <div className="text-xs text-gray-500 truncate max-w-56">{room.lastMessage}</div>
+              {room.isJoined ? (
+                <Badge className="bg-green-500">Joined</Badge>
+              ) : (
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); handleJoinRoom(room.id); }}>Join</Button>
+              )}
             </div>
           </Card>
         ))}
       </div>
-      <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">All Rooms</h3>
-        {(chatRooms || []).slice(2).map(room => (
-          <Card key={room.id} className="p-3 mb-2 hover:shadow-md cursor-pointer" onClick={() => handleRoomClick(room)}>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="text-lg">{room.category === 'fitness' ? '💪' : room.category === 'nutrition' ? '🍎' : room.category === 'skincare' ? '✨' : '💬'}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2"><h4 className="font-medium text-sm truncate">{room.name}</h4><Badge variant="secondary" className="text-xs">{room.members}</Badge></div>
-                  <p className="text-xs text-gray-600 truncate">{room.description}</p>
-                </div>
-              </div>
-              {room.isJoined ? (<Badge variant="outline" className="text-xs bg-green-50 text-green-700">Joined</Badge>) : (<Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleJoinRoom(room.id); }}>Join</Button>)}
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderLeaderboard = () => (
     <div className="space-y-3">
