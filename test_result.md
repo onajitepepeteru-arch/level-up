@@ -182,11 +182,11 @@ backend:
 
   - task: "User Data Retrieval APIs"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
@@ -194,6 +194,39 @@ backend:
         - working: false
         - agent: "testing"
         - comment: "❌ Partial failure. Get user endpoint (/api/user/{id}) works correctly. Get user scans endpoint (/api/user/{id}/scans) fails with 500 error due to MongoDB ObjectId serialization issue. Chat history endpoint works. Critical issue: ObjectId objects not JSON serializable."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ FIXED: All User Data Retrieval APIs now working correctly. GET /api/user/{user_id}/scans returns JSON serializable data with proper timestamp strings. GET /api/user/{user_id}/chat-history?session_id=abc works with no serialization errors. ObjectId serialization issue resolved."
+
+  - task: "Notifications API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Testing notifications API endpoints"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ Notifications API working perfectly. GET /api/user/{user_id}/notifications returns JSON serializable notifications. Unread count logic works correctly (inferred by read flag). PATCH /api/notifications/{notification_id}/read successfully changes state to read."
+
+  - task: "Auth Login Serialization"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "Testing auth registration and login JSON serialization"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ Auth Login Serialization working perfectly. POST /api/auth/register creates user with UUID string ID and token string. POST /api/auth/login with same credentials returns JSON response with user.id as UUID string and token string. No ObjectId leaks in responses. All data properly JSON serializable."
 
   - task: "MongoDB Connection"
     implemented: true
