@@ -72,9 +72,10 @@ class MediaBackendTester:
         print("\n🏥 Testing Server Health...")
         
         try:
-            response = self.session.get(f"{API_BASE_URL}/", timeout=10)
-            if response.status_code == 200:
-                self.log_test("Server Connectivity", True, "Backend server is accessible")
+            # Test media upload endpoint instead of root
+            response = self.session.post(f"{API_BASE_URL}/media/upload", timeout=10)
+            if response.status_code == 422:  # Expected error for missing file
+                self.log_test("Server Connectivity", True, "Backend server is accessible (media endpoint responding)")
                 return True
             else:
                 self.log_test("Server Connectivity", False, f"Server returned status: {response.status_code}")
