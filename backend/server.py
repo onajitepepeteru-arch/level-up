@@ -1035,8 +1035,11 @@ async def seed_chat_rooms():
 
 @api_router.get("/social/chat-rooms")
 async def get_chat_rooms(user_id: Optional[str] = None):
-    await seed_chat_rooms()
-    rooms = await db.chat_rooms.find({}).sort("lastActivity", -1).to_list(50)
+    # Return only rooms the user has joined; do not seed or show fake rooms
+    query = {}
+    if user_id:
+      query = {"members": {"$in": [user_id]}}
+    rooms = await db.chat_rooms.find(query).sort("lastActivity", -1).to_list(50)
     result = []
     for r in rooms:
         if '_id' in r:
