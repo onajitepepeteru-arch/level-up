@@ -240,6 +240,9 @@ frontend:
         - working: true
         - agent: "testing"
         - comment: "✅ Authentication flow working perfectly. Login screen loads with LevelUP branding, email/password fields work, social login buttons present, transitions to onboarding after login."
+        - working: true
+        - agent: "main"
+        - comment: "Updated SocialHub header to include notifications badge and navigation to notifications screen; no behavioral change to auth screen."
 
   - task: "Onboarding Flow"
     implemented: true
