@@ -23,11 +23,19 @@ jobs:
           cache: yarn
           cache-dependency-path: frontend/yarn.lock
 
+      - name: Set REACT_APP_BACKEND_URL (default if secret not set)
+        run: |
+          if [ -z "${{ secrets.REACT_APP_BACKEND_URL }}" ]; then
+            echo "REACT_APP_BACKEND_URL=http://localhost:8001" >> $GITHUB_ENV
+          else
+            echo "REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}" >> $GITHUB_ENV
+          fi
+
       - name: Install deps
         working-directory: frontend
         run: yarn install --frozen-lockfile
 
-      - name: Lint (if configured)
+      - name: Lint (skip if not configured)
         working-directory: frontend
         run: |
           if yarn run -s lint >/dev/null 2>&1; then
@@ -39,5 +47,6 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL || 'http://localhost:8001' }}
+          REACT_APP_BACKEND_URL: ${{ env.REACT_APP_BACKEND_URL }}
+          CI: false
         run: yarn build

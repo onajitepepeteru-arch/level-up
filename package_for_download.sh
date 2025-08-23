@@ -25,6 +25,13 @@ rm -rf $PACKAGE_DIR/frontend/node_modules 2>/dev/null || true
 # Remove build folder (will be created during deployment)
 rm -rf $PACKAGE_DIR/frontend/build 2>/dev/null || true
 
+# Copy CI workflows and dependabot
+echo "🧪 Adding CI workflows..."
+mkdir -p $PACKAGE_DIR/.github/workflows
+cp -r .github/workflows/*.yml $PACKAGE_DIR/.github/workflows/ 2>/dev/null || true
+mkdir -p $PACKAGE_DIR/.github
+cp -r .github/dependabot.yml $PACKAGE_DIR/.github/ 2>/dev/null || true
+
 # Copy documentation
 echo "📚 Adding documentation..."
 cp README.md $PACKAGE_DIR/
@@ -47,49 +54,6 @@ cat > $PACKAGE_DIR/backend/.env.sample << 'EOF'
 # Backend env
 # Replace with your real Mongo connection string (do not commit secrets)
 MONGO_URL=mongodb+srv://<username>:<password>@<cluster>/<db>?retryWrites=true&w=majority
-EOF
-
-# Create .gitignore for the package
-cat > $PACKAGE_DIR/.gitignore << 'EOF'
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-.venv/
-venv/
-
-# Production builds
-build/
-dist/
-
-# Environment variables (add your own)
-# .env
-
-# Logs
-*.log
-logs/
-
-# Runtime data
-pids/
-*.pid
-*.seed
-
-# Database
-*.db
-*.sqlite
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Uploads
-uploads/
 EOF
 
 # Create startup scripts
@@ -171,6 +135,7 @@ cat > $PACKAGE_DIR/PACKAGE_INFO.md << 'EOF'
 
 - `backend/` - Complete FastAPI backend
 - `frontend/` - Complete React frontend  
+- `.github/` - GitHub Actions CI and Dependabot  
 - `*.md` - Comprehensive documentation
 - `start_*.sh` - Development startup scripts
 - `deploy_production.sh` - Production build script
