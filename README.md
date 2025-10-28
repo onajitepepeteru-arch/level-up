@@ -1,232 +1,254 @@
-# 🏋️ Leveling-Up Fitness App
+# LevelUp - Complete Fitness & Wellness App
 
-> Your ultimate fitness companion for tracking progress, scanning body composition, nutrition analysis, and AI-powered coaching.
+> A fully functional AI-powered fitness, beauty, and nutrition tracking app with gamification, social features, and subscription management.
 
-## 🌟 Features
+## Quick Start
 
-### 📱 Complete Mobile Experience
-- **User Authentication**: Secure registration/login with social options
-- **Onboarding Flow**: Personalized fitness profile setup
-- **XP & Leveling System**: Gamified fitness journey
-- **AI Fitness Coach**: Personalized advice and workout recommendations
-
-### 📸 Advanced Scanning Technology
-- **Body Scanner**: Posture analysis and body composition tracking
-- **Face Scanner**: Skin health analysis and skincare recommendations  
-- **Food Scanner**: Nutrition analysis and calorie tracking
-- **Content Moderation**: AI-powered inappropriate content detection
-
-### 📊 Progress Tracking
-- **Activity Calendar**: Visual progress tracking
-- **XP Progression**: Earn points for healthy activities
-- **Streak Tracking**: Maintain consistency with daily goals
-- **Achievement System**: Unlock badges and milestones
-
-### 💬 Social & Community
-- **AI Chat**: 24/7 fitness coaching and support
-- **Social Hub**: Connect with other fitness enthusiasts
-- **Notifications**: Stay motivated with personalized alerts
-
-## 🚀 Tech Stack
-
-### Frontend
-- **React 18** with modern hooks and functional components
-- **Tailwind CSS** for responsive, mobile-first design
-- **Shadcn UI** for consistent component library
-- **React Router** for seamless navigation
-
-### Backend
-- **FastAPI** for high-performance Python API
-- **MongoDB Atlas** for cloud-native database
-- **JWT Authentication** for secure user sessions
-- **OpenCV** for basic computer vision and content moderation
-
-### AI & Integration
-- **Emergent LLM** for AI coaching capabilities
-- **BCrypt** for secure password hashing
-- **Content moderation** with computer vision
-
-## 🛠️ Installation
-
-### Prerequisites
-- Node.js 18+
-- Python 3.8+
-- MongoDB Atlas account
-
-### Quick Start
+### Option 1: Run Everything at Once
 ```bash
-# Clone and setup
-git clone <repository>
-cd leveling-up
+./start.sh
+```
 
-# Install backend dependencies
+### Option 2: Run Separately
+
+**Backend:**
+```bash
 cd backend
 pip install -r requirements.txt
+python server_new.py
+```
 
-# Install frontend dependencies  
-cd ../frontend
+**Frontend:**
+```bash
+cd frontend
 yarn install
-
-# Start development servers
-# Backend (from /backend)
-python server.py
-
-# Frontend (from /frontend)
 yarn start
 ```
 
-### Environment Setup
-All environment variables are pre-configured for development. See `SETUP_GUIDE.md` for detailed configuration.
+The app will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
-## 📊 Database Access
+## What's Included
 
-### MongoDB Atlas Connection
-- **Database**: levelingup_production
-- **Web Interface**: [MongoDB Atlas](https://cloud.mongodb.com/)
-- **Credentials**: See `DATABASE_ACCESS.md`
+### Fully Functional Features
 
-### Collections
-- `users` - User profiles, XP, subscription data
-- `scans` - Body/face/food scan results  
-- `chat_messages` - AI conversation history
-- `notifications` - App notifications
+#### Authentication & Security
+- Secure email/password registration and login
+- JWT-based authentication with bcrypt password hashing
+- User session management
+- Profile management and settings
 
-## 🔐 Security Features
+#### AI Scanners (Ready for Your API Keys)
+- **Body Scanner**: Analyzes body photos for posture, composition, and body type
+- **Face Scanner**: Analyzes skin for type, concerns, and personalized recommendations
+- **Food Scanner**: Analyzes meals for nutritional content and calorie tracking
+- Simulated AI responses ready to be replaced with your actual APIs
 
-### Content Moderation
-- Automated inappropriate content detection
-- Admin review system for flagged content
-- Safe environment for all users
+#### Gamification System
+- XP earning for completing scans and activities
+- Level progression (100 XP per level)
+- Streak tracking for daily consistency
+- Daily missions with XP rewards
+- Avatar system displaying current level
 
-### Data Protection
-- Encrypted password storage with bcrypt
-- JWT-based session management
-- CORS protection
-- Input validation and sanitization
+#### Social Features
+- Create and share posts with the community
+- Like, comment, and interact with posts
+- Community chat rooms (public and private)
+- Real-time messaging
+- User search and profiles
+- Moderation system (backend ready)
 
-## 🎯 Subscription System (Ready for Stripe)
+#### Subscription & Payments
+- Stripe integration (placeholder ready for your keys)
+- Multiple subscription tiers: Free, Basic, Pro, Premium
+- Subscription management and cancellation
+- Payment webhook handling
 
-### Tier Structure
-- **Free**: Basic features, limited scans
-- **Basic**: Unlimited scans, basic AI
-- **Pro**: Advanced analytics, priority support
-- **Elite**: Everything + personalized coaching
+#### Notifications & Reminders
+- In-app notifications
+- Custom reminders for:
+  - Workouts
+  - Skincare routines
+  - Meal tracking
+- Reminder scheduling by day and time
 
-### Integration Ready
-The app is architected to easily integrate Stripe payments when API keys are provided.
+#### Settings & Profile
+- Profile editing (name, avatar, goals, activity level)
+- Account management
+- Logout functionality
+- Privacy and security settings
 
-## 📈 Analytics & Admin
+## Tech Stack
 
-### Admin Dashboard
-Access comprehensive user analytics:
-```bash
-GET /api/admin/users?admin_email=admin@levelingup.com&admin_password=Admin@LevelingUp2025
+### Frontend
+- React 18 with modern hooks
+- TailwindCSS for styling
+- shadcn/ui component library
+- React Router for navigation
+
+### Backend
+- FastAPI (Python)
+- Supabase (PostgreSQL) for database
+- JWT authentication
+- bcrypt for password hashing
+
+### Database
+- Supabase with Row Level Security (RLS)
+- Tables: users, scans, posts, chat_rooms, chat_messages, notifications, reminders, subscriptions
+
+## Configuration
+
+All settings are in the `.env` file:
+
+### Already Configured
+- Supabase URL and keys
+- Backend API URL
+- JWT secret
+- Email addresses
+
+### Add Your API Keys to Activate
+```env
+BODY_SCANNER_API_KEY=[Your API Key]
+FACE_SCANNER_API_KEY=[Your API Key]
+FOOD_SCANNER_API_KEY=[Your API Key]
+
+STRIPE_PUBLIC_KEY=[Your Stripe Public Key]
+STRIPE_SECRET_KEY=[Your Stripe Secret Key]
+STRIPE_WEBHOOK_SECRET=[Your Webhook Secret]
 ```
 
-### Metrics Tracked
-- User registration and engagement
-- Scan completion rates
-- AI chat interactions
-- Content moderation statistics
-- XP and level progression
+## API Documentation
 
-## 🔌 API Integration Ready
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
 
-### Awaiting API Keys For:
-- **Google OAuth**: Social login
-- **Apple Sign-In**: iOS authentication  
-- **Stripe**: Payment processing
-- **LogMeal**: Advanced nutrition analysis
-- **GlamAR**: Professional skin analysis
-- **FitExpress**: Detailed body composition
+### User Management
+- `GET /api/user/{user_id}` - Get user data
+- `PATCH /api/user/{user_id}` - Update user
+- `POST /api/user/{user_id}/add-xp` - Add XP to user
 
-### Easy Integration
-Each scanner component is designed for drop-in API replacement:
+### Scanners
+- `POST /api/scan/body` - Scan body photo
+- `POST /api/scan/face` - Scan face photo
+- `POST /api/scan/food` - Scan food photo
+- `GET /api/scan/{user_id}/scans` - Get scan history
 
-```javascript
-// Replace mock analysis with real API calls
-const response = await fetch(`${REAL_API_ENDPOINT}`, {
-  method: 'POST', 
-  headers: { 'Authorization': `Bearer ${API_KEY}` },
-  body: formData
-});
+### Social
+- `GET /api/social/feed` - Get social feed
+- `POST /api/social/post` - Create post
+- `POST /api/social/like` - Like/unlike post
+- `POST /api/social/comment` - Comment on post
+- `GET /api/social/chat-rooms` - Get chat rooms
+- `POST /api/social/chat-room/create` - Create chat room
+- `POST /api/social/join-room` - Join chat room
+- `GET /api/social/chat-room/{room_id}/messages` - Get messages
+- `POST /api/social/chat-room/message` - Send message
+
+### Notifications & Reminders
+- `GET /api/user/{user_id}/notifications` - Get notifications
+- `POST /api/notifications` - Create notification
+- `GET /api/user/{user_id}/reminders` - Get reminders
+- `POST /api/reminders` - Create reminder
+
+### Payments
+- `GET /api/payments/config` - Get Stripe config
+- `POST /api/payments/create-checkout-session` - Create checkout
+- `GET /api/payments/subscription/{user_id}` - Get subscription status
+- `POST /api/payments/activate-subscription` - Activate subscription
+
+## Database Schema
+
+The app uses Supabase with the following tables:
+
+- **users**: User accounts with profiles, XP, levels, and subscription data
+- **scans**: Body, face, and food scan history with analysis results
+- **posts**: Social media posts with likes and comments
+- **chat_rooms**: Community chat rooms (public/private)
+- **chat_messages**: Real-time chat messages
+- **notifications**: User notifications
+- **reminders**: Custom reminders for activities
+- **subscriptions**: Payment and subscription management
+
+All tables have Row Level Security (RLS) enabled for data protection.
+
+## Integrating Real AI APIs
+
+The scanners currently use simulated AI responses. To integrate real APIs:
+
+1. Add your API keys to `.env`
+2. Update the scanner endpoints in `backend/routes/scanners.py`
+3. Replace the simulated analysis with actual API calls
+4. Parse and format the API response for the frontend
+
+Example structure maintained for compatibility:
+```python
+{
+    "message": "Scan completed",
+    "analysis": {
+        # Your API response data
+    },
+    "xp_earned": 5,
+    "scan_id": "uuid"
+}
 ```
 
-## 📱 Mobile-First Design
+## Integrating Stripe Payments
 
-### Responsive Features
-- Native mobile app feel
-- Touch-optimized interactions
-- Progressive Web App (PWA) ready
-- Offline capability support
+To enable real payment processing:
 
-### Cross-Platform
-- Works on iOS, Android, and desktop
-- Consistent experience across devices
-- App-like navigation and interactions
+1. Create a Stripe account at https://stripe.com
+2. Add your Stripe keys to `.env`
+3. Update `backend/routes/payments.py`:
+   - Import Stripe SDK
+   - Replace placeholder checkout with `stripe.checkout.Session.create()`
+   - Implement webhook signature verification
+   - Handle subscription lifecycle events
 
-## 🎮 Gamification System
+## Testing the App
 
-### XP & Levels
-- Earn XP for healthy activities
-- Level up to unlock new features
-- Visual progress tracking
-- Achievement badges
+### Basic Flow
+1. Register a new account
+2. Complete the onboarding flow
+3. Try all three scanners (body, face, food)
+4. Check XP and level progression
+5. Create a post in Social Hub
+6. Join or create a chat room
+7. Set reminders in Settings
 
-### Daily Missions
-- Food scanning: +5 XP
-- Body analysis: +8 XP  
-- Face scanning: +6 XP
-- Streak bonuses and multipliers
+### Scanner Testing
+For each scanner:
+1. Upload or capture an image
+2. Click "Analyze"
+3. View the AI analysis results
+4. Receive XP reward
+5. Check scan history
 
-## 💡 Usage Examples
+## Production Deployment
 
-### For Users
-1. **Sign Up** → Complete onboarding → Start earning XP
-2. **Scan Food** → Get nutrition info → Track calories
-3. **Chat with AI** → Get workout advice → Stay motivated
-4. **Track Progress** → View calendar → Maintain streaks
+### Important Security Steps
+1. Change `JWT_SECRET` to a strong random value
+2. Use environment-specific URLs for `REACT_APP_BACKEND_URL`
+3. Enable HTTPS for both frontend and backend
+4. Configure CORS to allow only your production domain
+5. Set up Stripe webhooks with your production URL
+6. Configure proper logging and monitoring
 
-### For Admins
-1. **Monitor Users** → View analytics → Manage content
-2. **Content Moderation** → Review flagged content → Approve/reject
-3. **User Support** → Send notifications → Track engagement
+## Documentation
 
-## 🔄 Development Status
+- `COMPLETE_SETUP.md` - Detailed setup and configuration guide
+- `API_DOCUMENTATION.md` - Complete API reference
+- `DATABASE_ACCESS.md` - Database schema and access guide
 
-### ✅ Production Ready
-- Complete user authentication system
-- Working AI chat integration
-- Photo upload and processing
-- Activity tracking and gamification  
-- Content moderation system
-- Admin dashboard and user management
-- Cloud database integration
-- Mobile-optimized interface
+## Support
 
-### ⏳ Awaiting External Integrations
-- Payment processing (Stripe keys needed)
-- Social login (OAuth credentials needed)
-- Advanced API integrations (API keys needed)
+For issues or questions:
+- Email: support@email.com
+- API Docs: http://localhost:8000/docs (when server is running)
 
-## 📞 Support & Maintenance
+## License
 
-### Self-Contained System
-- No external dependencies for core functionality
-- Cloud database with automated backups
-- Content moderation built-in
-- Comprehensive error handling
-
-### Monitoring
-- Real-time user analytics
-- Performance monitoring ready
-- Error tracking and logging
-- User activity insights
-
----
-
-## 🎉 Ready to Launch!
-
-The Leveling-Up fitness app is **production-ready** with a complete feature set. Simply provide external API keys for enhanced functionality and deploy to your preferred hosting platform.
-
-**Built with ❤️ for fitness enthusiasts worldwide.**
+© 2025 LevelUp. All rights reserved.

@@ -104,7 +104,7 @@ const AuthScreen = ({ onLogin }) => {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
         <div className="text-center pt-16 pb-8">
-          <h1 className="text-white text-4xl font-bold tracking-wider">Leveling-Up</h1>
+          <h1 className="text-white text-4xl font-bold tracking-wider">LevelUp</h1>
           <p className="text-white/80 text-sm mt-2">Your Fitness Journey Starts Here</p>
         </div>
 
@@ -116,9 +116,9 @@ const AuthScreen = ({ onLogin }) => {
                 {isLogin ? "Welcome Back" : "Create Account"}
               </h2>
               <p className="text-gray-600">
-                {isLogin 
+                {isLogin
                   ? "Welcome back! Please log in using the form below to continue."
-                  : "Join Leveling-Up and start your fitness journey today!"
+                  : "Join LevelUp and start your fitness journey today!"
                 }
               </p>
             </div>
@@ -213,7 +213,7 @@ const AuthScreen = ({ onLogin }) => {
         {/* Footer */}
         <div className="text-center py-6">
           <div className="inline-flex items-center gap-2 text-white/80 text-sm">
-            <span>© 2025 Leveling-Up</span>
+            <span>© 2025 LevelUp</span>
           </div>
         </div>
       </div>
