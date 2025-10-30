@@ -1,55 +1,21 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from './ui/button';
+import supabase from '../lib/supabase';
 
 const GoogleLogin = ({ onSuccess, onError }) => {
-  useEffect(() => {
-    // Initialize Google Sign-In
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || "your-google-client-id.apps.googleusercontent.com",
-        callback: handleCredentialResponse,
-      });
-    }
-  }, []);
-
-  const handleCredentialResponse = async (response) => {
+  const handleGoogleLogin = async () => {
     try {
-      // Send the credential to your backend
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const result = await fetch(`${backendUrl}/api/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          credential: response.credential,
-        }),
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
       });
 
-      const data = await result.json();
-      
-      if (result.ok) {
-        // Store user data
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('token', data.token);
-        
-        onSuccess(data.user);
-      } else {
-        throw new Error(data.detail || 'Google login failed');
-      }
+      if (error) throw error;
     } catch (error) {
       console.error('Google login error:', error);
-      onError(error.message);
-    }
-  };
-
-  const handleGoogleLogin = () => {
-    if (window.google) {
-      window.google.accounts.id.prompt();
-    } else {
-      // Fallback for when Google SDK is not loaded
-      onError('Google Sign-In is not available. Please try again later.');
+      onError(error.message || 'Google Sign-In failed');
     }
   };
 

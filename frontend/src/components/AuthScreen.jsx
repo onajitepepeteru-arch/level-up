@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import GoogleLogin from "./GoogleLogin";
 import AppleLogin from "./AppleLogin";
+import supabase from "../lib/supabase";
 
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -27,43 +28,90 @@ const AuthScreen = ({ onLogin }) => {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      
-      const requestData = isLogin 
-        ? { email, password }
-        : { name, email, password };
-      
-      const response = await fetch(`${backendUrl}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (userError) throw userError;
+
         toast({
           title: "Success",
-          description: data.message || (isLogin ? "Logged in successfully!" : "Account created successfully!")
+          description: "Logged in successfully!"
         });
-        
-        // Store user data
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('token', data.token);
-        
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.id);
+        localStorage.setItem('token', data.session.access_token);
+
         setTimeout(() => {
-          onLogin(isLogin);
-        }, 1000);
+          onLogin(true);
+        }, 500);
       } else {
-        throw new Error(data.detail || 'Authentication failed');
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name,
+              display_name: name
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (!authData.user) {
+          throw new Error('Failed to create user');
+        }
+
+        const username = name.trim().split(' ')[0].toLowerCase() + Math.floor(Math.random() * 1000);
+
+        const { data: userData, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email,
+            name,
+            username,
+            level: 1,
+            xp: 0,
+            streak_days: 0,
+            onboarding_completed: false,
+            subscription_tier: 'free',
+            subscription_active: false,
+            auth_provider: 'email'
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        toast({
+          title: "Success",
+          description: "Account created successfully!"
+        });
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.id);
+        localStorage.setItem('token', authData.session.access_token);
+
+        setTimeout(() => {
+          onLogin(false);
+        }, 500);
       }
     } catch (error) {
       toast({

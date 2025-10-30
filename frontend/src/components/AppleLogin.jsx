@@ -1,51 +1,21 @@
 import React from 'react';
 import { Button } from './ui/button';
+import supabase from '../lib/supabase';
 
 const AppleLogin = ({ onSuccess, onError }) => {
   const handleAppleLogin = async () => {
     try {
-      // Check if Apple Sign-In is available
-      if (!window.AppleID) {
-        throw new Error('Apple Sign-In is not available');
-      }
-
-      const response = await window.AppleID.auth.signIn({
-        clientId: process.env.REACT_APP_APPLE_CLIENT_ID || 'your.app.bundle.id',
-        redirectURI: window.location.origin,
-        scope: 'name email',
-        responseMode: 'query',
-        responseType: 'code id_token',
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: window.location.origin
+        }
       });
 
-      // Send the response to your backend
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const result = await fetch(`${backendUrl}/api/auth/apple`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: response.code,
-          id_token: response.id_token,
-          user: response.user,
-        }),
-      });
-
-      const data = await result.json();
-      
-      if (result.ok) {
-        // Store user data
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('token', data.token);
-        
-        onSuccess(data.user);
-      } else {
-        throw new Error(data.detail || 'Apple login failed');
-      }
+      if (error) throw error;
     } catch (error) {
       console.error('Apple login error:', error);
-      onError(error.message || 'Apple Sign-In failed. Please try again.');
+      onError(error.message || 'Apple Sign-In failed');
     }
   };
 

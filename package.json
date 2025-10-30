@@ -4,10 +4,10 @@
   "description": "Comprehensive fitness tracking app with AI coaching",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"cd backend && python server_new.py\" \"cd frontend && yarn start\"",
-    "start-backend": "cd backend && python server_new.py",
+    "dev": "concurrently \"cd backend && npm start\" \"cd frontend && yarn start\"",
+    "start-backend": "cd backend && npm start",
     "start-frontend": "cd frontend && yarn start",
-    "install-all": "cd frontend && yarn install && cd ../backend && pip install -r requirements.txt",
+    "install-all": "cd backend && npm install && cd ../frontend && yarn install",
     "build": "cd frontend && yarn build"
   },
   "keywords": ["fitness", "ai", "health", "scanning", "gamification"],

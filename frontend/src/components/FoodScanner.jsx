@@ -23,7 +23,6 @@ const FoodScanner = ({ onNavigate }) => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchMeals = async () => {
